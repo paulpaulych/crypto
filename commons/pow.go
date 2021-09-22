@@ -25,9 +25,9 @@ var (
 
 func iterateBin(x *big.Int, action func(isOne bool)) {
 	shift := uint(0)
-	ti := big.NewInt(0)
+	ti := new(big.Int)
 	for ; ti.Rsh(x, shift).Cmp(zero) != 0; shift++ {
-		mod := big.NewInt(0)
+		mod := new(big.Int)
 		action(mod.Mod(ti, two).Cmp(zero) != 0)
 	}
 }
