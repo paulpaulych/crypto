@@ -26,8 +26,8 @@ func GcdEx(a, b *big.Int) GcdExRes {
 	}
 
 	type row = struct{ i1, i2, i3 *big.Int }
-	U := &row{a, big.NewInt(1), big.NewInt(0)}
-	V := &row{b, big.NewInt(0), big.NewInt(1)}
+	U := &row{new(big.Int).Set(a), big.NewInt(1), big.NewInt(0)}
+	V := &row{new(big.Int).Set(b), big.NewInt(0), big.NewInt(1)}
 
 	q := new(big.Int)
 	for V.i1.Cmp(big.NewInt(0)) != 0 {
