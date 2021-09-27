@@ -1,4 +1,4 @@
-package shamir
+package core
 
 import (
 	"github.com/paulpaulych/crypto/commons"
