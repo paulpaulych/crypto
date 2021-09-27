@@ -4,7 +4,7 @@ import "math/big"
 
 func PowByMod(x, pow, mod *big.Int) *big.Int {
 	res := big.NewInt(1)
-	ai := x
+	ai := new(big.Int).Set(x)
 	iterateBin(pow, func(isOne bool) {
 		if isOne {
 			res.Mul(res, ai).Mod(res, mod)
