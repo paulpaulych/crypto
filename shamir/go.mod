@@ -1,6 +1,6 @@
 module github.com/paulpaulych/crypto/shamir
 
-replace github.com/paulpaulych/crypto/commons => ./../../commons
+replace github.com/paulpaulych/crypto/commons => ./../commons
 
 go 1.16
 
