@@ -1,15 +1,12 @@
-package args
+package flags
 
 import (
 	"flag"
 	"fmt"
+	cmd "github.com/paulpaulych/crypto/shamir/cli/cmd"
 )
 
-type RecvArgs struct {
-	BindAddr string
-}
-
-func ParseRecvCmdFlags(flags *flag.FlagSet, args []string) (*RecvArgs, error) {
+func ParseRecvCmdFlags(flags *flag.FlagSet, args []string) (*cmd.RecvArgs, error) {
 	bindHostPtr := flags.String("host", "localhost", "host to bind")
 	bindPortPtr := flags.Int("port", 0, "port to bind")
 
@@ -19,5 +16,5 @@ func ParseRecvCmdFlags(flags *flag.FlagSet, args []string) (*RecvArgs, error) {
 	}
 
 	addr := fmt.Sprintf("%s:%v", *bindHostPtr, *bindPortPtr)
-	return &RecvArgs{BindAddr: addr}, nil
+	return &cmd.RecvArgs{BindAddr: addr}, nil
 }

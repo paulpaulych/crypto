@@ -17,12 +17,12 @@ type GcdExRes = struct {
 func GcdEx(a, b *big.Int) GcdExRes {
 	switch a.Cmp(b) {
 	case -1:
-		log.Fatalln("GcdEx: A cannot be less that B")
+		log.Fatalf("GcdEx: A=%v cannot be less that B=%v", a, b)
 	case 0:
-		log.Fatalln("GcdEx: A cannot be equal to B")
+		log.Fatalf("GcdEx: A=%v cannot be equal to B=%v", a, b)
 	}
 	if b.Cmp(big.NewInt(1)) == -1 {
-		log.Fatalln("GcdEx: B must be positive")
+		log.Fatalf("GcdEx: B=%v must be positive", b)
 	}
 
 	type row = struct{ i1, i2, i3 *big.Int }
