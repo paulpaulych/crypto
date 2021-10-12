@@ -1,16 +1,17 @@
-package messaging
+package msg_core
 
 import (
 	"errors"
 	"fmt"
+	"github.com/paulpaulych/crypto/internal/app/tcp"
 	"log"
 	. "math/big"
 	. "net"
 )
 
-type ReadMsg = func(Conn) (*Int, error)
+type GetReader = func(code ProtocolCode) (Read, error)
 
-func ListenForMsg(bindAddr string, readMsg ReadMsg) error {
+func ListenForMsg(bindAddr string, reader GetReader) error {
 	listener, err := Listen("tcp", bindAddr)
 	if err != nil {
 		errMsg := fmt.Sprintf("can't bind to %s: %v", bindAddr, err)
@@ -24,7 +25,17 @@ func ListenForMsg(bindAddr string, readMsg ReadMsg) error {
 		if err != nil {
 			log.Printf("can't accept connection: %v\n", err)
 		}
-		msg, err := readMsg(conn)
+		code, err := tcp.ReadUint32(conn)
+		if err != nil {
+			log.Printf("failed to read protocol code: %s. Continuing listening", err)
+			continue
+		}
+		read, err := reader(code)
+		if err != nil {
+			log.Printf("")
+		}
+
+		msg, err := read(conn)
 		if err != nil {
 			log.Printf("can't read message: %v\n", err)
 			continue

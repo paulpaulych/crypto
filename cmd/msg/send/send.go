@@ -2,7 +2,7 @@ package send
 
 import (
 	"fmt"
-	"github.com/paulpaulych/crypto/internal/app/messaging"
+	"github.com/paulpaulych/crypto/internal/app/messaging/msg-core"
 	"github.com/paulpaulych/crypto/internal/app/messaging/protocols"
 	"github.com/paulpaulych/crypto/internal/infra/cli"
 	"math/big"
@@ -46,15 +46,15 @@ func (conf *SendConf) InitCmd(args []string) (cli.Cmd, cli.CmdConfError) {
 
 type SendCmd struct {
 	addr   string
-	writer messaging.WriteMsg
-	msg    messaging.Msg
+	writer msg_core.MsgWriter
+	msg    msg_core.Msg
 }
 
 func (cmd *SendCmd) Run() error {
-	return messaging.SendMsg(cmd.addr, cmd.msg, cmd.writer)
+	return msg_core.SendMsg(cmd.addr, cmd.msg, cmd.writer)
 }
 
-func writerForProtocol(name string, primeStr *string) (messaging.WriteMsg, cli.CmdConfError) {
+func writerForProtocol(name string, primeStr *string) (msg_core.MsgWriter, cli.CmdConfError) {
 	switch name {
 	case "shamir":
 		if primeStr == nil || len(*primeStr) == 0 {
