@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/paulpaulych/crypto/internal/app/messaging/msg-core"
+	"github.com/paulpaulych/crypto/internal/app/messaging/nio"
 	"math/big"
 	. "net"
 )
@@ -21,7 +22,7 @@ func ShamirWriter(p *big.Int) msg_core.Alice {
 
 func ChooseBob(
 	code msg_core.ProtocolCode,
-	out func(Addr) MsgWriter,
+	out func(Addr) nio.BlockWriter,
 	onErr func(string),
 ) (msg_core.Bob, error) {
 	switch code {
@@ -35,12 +36,12 @@ func ChooseBob(
 
 type writer struct {
 	code  msg_core.ProtocolCode
-	write func(msg_core.Msg, Conn) error
+	write func(nio.ByteReader, Conn) error
 }
 
 func (w writer) ProtocolCode() msg_core.ProtocolCode {
 	return w.code
 }
-func (w writer) Write(msg msg_core.Msg, conn Conn) error {
+func (w writer) Write(msg nio.ByteReader, conn Conn) error {
 	return w.write(msg, conn)
 }

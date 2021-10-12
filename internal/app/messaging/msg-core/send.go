@@ -3,6 +3,7 @@ package msg_core
 import (
 	"errors"
 	"fmt"
+	"github.com/paulpaulych/crypto/internal/app/messaging/nio"
 	"github.com/paulpaulych/crypto/internal/app/tcp"
 	"log"
 	"math/big"
@@ -14,7 +15,7 @@ type SendArgs struct {
 	Msg  *big.Int
 }
 
-func SendMsg(addr string, msg Msg, alice Alice) error {
+func SendMsg(addr string, msg nio.ByteReader, alice Alice) error {
 	conn, err := Dial("tcp", addr)
 	if err != nil {
 		errMsg := fmt.Sprintf("can't connect to %s: %v", addr, err)

@@ -5,14 +5,15 @@ import (
 	"fmt"
 	"github.com/paulpaulych/crypto/internal/app/algorithms/shamir"
 	"github.com/paulpaulych/crypto/internal/app/messaging/msg-core"
+	"github.com/paulpaulych/crypto/internal/app/messaging/nio"
 	"github.com/paulpaulych/crypto/internal/app/tcp"
 	"log"
 	. "math/big"
 	. "net"
 )
 
-func ShamirWriteFn(p *Int) func(msg msg_core.Msg, conn Conn) error {
-	return func(msg msg_core.Msg, conn Conn) error {
+func ShamirWriteFn(p *Int) func(msg nio.ByteReader, conn Conn) error {
+	return func(msg nio.ByteReader, conn Conn) error {
 		alice, err := shamir.InitAlice(p)
 		if err != nil {
 			log.Printf("failed to init alice: %d", err)
@@ -25,7 +26,13 @@ func ShamirWriteFn(p *Int) func(msg msg_core.Msg, conn Conn) error {
 			return errors.New(errMsg)
 		}
 
-		step1out, err := alice.Step1(new(Int).SetBytes(msg))
+		msgBytes, err := nio.ReadAll(msg)
+		if err != nil {
+			errMsg := fmt.Sprintf("error reading message: %v", err)
+			return errors.New(errMsg)
+		}
+		msgInt := new(Int).SetBytes(msgBytes)
+		step1out, err := alice.Step1(msgInt)
 		if err != nil {
 			errMsg := fmt.Sprintf("writing step1out failed: %v", err)
 			return errors.New(errMsg)
@@ -54,12 +61,8 @@ func ShamirWriteFn(p *Int) func(msg msg_core.Msg, conn Conn) error {
 	}
 }
 
-type MsgWriter interface {
-	Write(p []byte, hasMore bool) error
-}
-
 func ShamirBob(
-	output func(Addr) MsgWriter,
+	output func(Addr) nio.BlockWriter,
 	onErr func(string),
 ) msg_core.Bob {
 	return func(conn Conn) {
