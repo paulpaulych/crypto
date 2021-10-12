@@ -1,17 +1,16 @@
 package msg_core
 
 import (
-	"math/big"
 	"net"
 )
 
-type Msg = *big.Int
+type Msg = []byte
 
 type ProtocolCode = uint32
 
-type Read = func(net.Conn) (Msg, error)
+type Bob = func(net.Conn)
 
-type MsgWriter interface {
+type Alice interface {
 	ProtocolCode() ProtocolCode
 	Write(Msg, net.Conn) error
 }

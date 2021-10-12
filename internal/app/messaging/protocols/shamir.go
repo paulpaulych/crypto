@@ -25,7 +25,7 @@ func ShamirWriteFn(p *Int) func(msg msg_core.Msg, conn Conn) error {
 			return errors.New(errMsg)
 		}
 
-		step1out, err := alice.Step1(msg)
+		step1out, err := alice.Step1(new(Int).SetBytes(msg))
 		if err != nil {
 			errMsg := fmt.Sprintf("writing step1out failed: %v", err)
 			return errors.New(errMsg)
@@ -54,40 +54,52 @@ func ShamirWriteFn(p *Int) func(msg msg_core.Msg, conn Conn) error {
 	}
 }
 
-func ShamirReader() msg_core.Read {
-	return func(conn Conn) (*Int, error) {
+type MsgWriter interface {
+	Write(p []byte, hasMore bool) error
+}
+
+func ShamirBob(
+	output func(Addr) MsgWriter,
+	onErr func(string),
+) msg_core.Bob {
+	return func(conn Conn) {
+		out := output(conn.RemoteAddr())
 		p, err := tcp.ReadBigIntWithLen(conn)
 		if err != nil {
-			errMsg := fmt.Sprintf("can't read p: %v", err)
-			return nil, errors.New(errMsg)
+			onErr(fmt.Sprintf("can't read p: %v", err))
+			return
 		}
 
 		bob, err := shamir.InitBob(p)
 		if err != nil {
-			log.Printf("failed to init bob: %d", err)
-			return nil, err
+			onErr(fmt.Sprintf("failed to init bob: %d", err))
+			return
 		}
 
 		step1out, err := tcp.ReadBigIntWithLen(conn)
 		if err != nil {
-			errMsg := fmt.Sprintf("can't read step1out: %v", err)
-			return nil, errors.New(errMsg)
+			onErr(fmt.Sprintf("can't read step1out: %v", err))
+			return
 		}
 
 		step2out := bob.Step2(step1out)
 		err = tcp.WriteBigIntWithLen(conn, step2out)
 		if err != nil {
-			errMsg := fmt.Sprintf("can't write step2out: %v", err)
-			return nil, errors.New(errMsg)
+			onErr(fmt.Sprintf("can't write step2out: %v", err))
+			return
 		}
 
 		step3out, err := tcp.ReadBigIntWithLen(conn)
 		if err != nil {
-			errMsg := fmt.Sprintf("can't read step3out: %v", err)
-			return nil, errors.New(errMsg)
+			onErr(fmt.Sprintf("can't write step2out: %v", err))
+			return
 		}
 
-		msg := bob.Decode(step3out)
-		return msg, nil
+		msgBytes := bob.Decode(step3out).Bytes()
+		err = out.Write(msgBytes, false)
+		if err != nil {
+			onErr(fmt.Sprintf("error writing received message: %v", err))
+			return
+		}
 	}
 }

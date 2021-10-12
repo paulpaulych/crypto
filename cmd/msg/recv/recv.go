@@ -1,10 +1,14 @@
 package recv
 
 import (
+	"fmt"
 	"github.com/paulpaulych/crypto/internal/app/messaging/msg-core"
 	"github.com/paulpaulych/crypto/internal/app/messaging/protocols"
+	"github.com/paulpaulych/crypto/internal/app/tcp"
 	"github.com/paulpaulych/crypto/internal/infra/cli"
+	"log"
 	"net"
+	"os"
 )
 
 type RecvConf struct{}
@@ -39,5 +43,36 @@ type RecvCmd struct {
 }
 
 func (cmd *RecvCmd) Run() error {
-	return msg_core.ListenForMsg(cmd.bindAddr, protocols.GetProtocolReader)
+	return tcp.StartServer(cmd.bindAddr, msg_core.RecvMessage(chooseBob))
+}
+
+func chooseBob(code msg_core.ProtocolCode) (msg_core.Bob, error) {
+	onErr := func(e string) {
+		log.Printf("error reading message: %s", e)
+	}
+	newWriter := func(from net.Addr) protocols.MsgWriter {
+		return &consoleWriter{addr: from.String(), isFirst: true}
+	}
+	return protocols.ChooseBob(code, newWriter, onErr)
+}
+
+type consoleWriter struct {
+	addr    string
+	isFirst bool
+}
+
+func (w *consoleWriter) Write(p []byte, hasMore bool) error {
+	if w.isFirst {
+		fmt.Printf("RECEIVED MESSAGE FROM %s: ", w.addr)
+		_, err := os.Stdout.Write(p)
+		if err != nil {
+			return err
+		}
+		if !hasMore {
+			fmt.Println()
+		}
+		w.isFirst = false
+	}
+	_, err := os.Stdout.Write(p)
+	return err
 }

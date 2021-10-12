@@ -29,11 +29,8 @@ func (conf *SendConf) InitCmd(args []string) (cli.Cmd, cli.CmdConfError) {
 		return nil, cli.NewCmdConfError("args required: [host:port] [message]", nil)
 	}
 
-	addr, msgStr := flags.Args[0], flags.Args[1]
-	msg, success := new(big.Int).SetString(msgStr, 10)
-	if !success {
-		return nil, cli.NewCmdConfError("message must be integer", nil)
-	}
+	addr := flags.Args[0]
+	msg := []byte(flags.Args[1])
 
 	protocol := flags.Flags["protocol"].GetOr("shamir")
 	prime := flags.Flags["prime"].Get()
@@ -46,7 +43,7 @@ func (conf *SendConf) InitCmd(args []string) (cli.Cmd, cli.CmdConfError) {
 
 type SendCmd struct {
 	addr   string
-	writer msg_core.MsgWriter
+	writer msg_core.Alice
 	msg    msg_core.Msg
 }
 
@@ -54,7 +51,7 @@ func (cmd *SendCmd) Run() error {
 	return msg_core.SendMsg(cmd.addr, cmd.msg, cmd.writer)
 }
 
-func writerForProtocol(name string, primeStr *string) (msg_core.MsgWriter, cli.CmdConfError) {
+func writerForProtocol(name string, primeStr *string) (msg_core.Alice, cli.CmdConfError) {
 	switch name {
 	case "shamir":
 		if primeStr == nil || len(*primeStr) == 0 {

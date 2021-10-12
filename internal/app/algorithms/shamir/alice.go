@@ -16,11 +16,11 @@ type Alice struct {
 
 func (a *Alice) Step1(msg *Int) (*Int, error) {
 	if msg.Cmp(a.P) != -1 {
-		err := fmt.Sprintf("Shamir FATAL: cli=%v cannot be greater than P=%v", msg, a.P)
+		err := fmt.Sprintf("Shamir FATAL: msg=%v cannot be greater than P=%v", msg, a.P)
 		return nil, errors.New(err)
 	}
 	if msg.Cmp(NewInt(1)) != 1 {
-		err := fmt.Sprintf("Shamir FATAL: cli=%v cannot be less than 2", msg)
+		err := fmt.Sprintf("Shamir FATAL: msg=%v cannot be less than 2", msg)
 		return nil, errors.New(err)
 	}
 	return arythmetics.PowByMod(msg, a.C, a.P), nil
