@@ -9,7 +9,6 @@ import (
 	"github.com/paulpaulych/crypto/internal/infra/cli"
 	"log"
 	"net"
-	"os"
 )
 
 type RecvConf struct{}
@@ -52,7 +51,7 @@ func chooseBob(code msg_core.ProtocolCode) (msg_core.Bob, error) {
 		log.Printf("error reading message: %s", e)
 	}
 	newWriter := func(from net.Addr) nio.BlockWriter {
-		return &consoleWriter{addr: from.String(), isFirst: true}
+		return &consoleWriter{addr: from.String(), isFirst: true, buf: ""}
 	}
 	return protocols.ChooseBob(code, newWriter, onErr)
 }
@@ -60,20 +59,17 @@ func chooseBob(code msg_core.ProtocolCode) (msg_core.Bob, error) {
 type consoleWriter struct {
 	addr    string
 	isFirst bool
+	buf     string
 }
 
 func (w *consoleWriter) Write(p []byte, hasMore bool) error {
 	if w.isFirst {
-		fmt.Printf("RECEIVED MESSAGE FROM %s: ", w.addr)
-		_, err := os.Stdout.Write(p)
-		if err != nil {
-			return err
-		}
-		if !hasMore {
-			fmt.Println()
-		}
+		w.buf = fmt.Sprintf("RECEIVED MESSAGE FROM %s: ", w.addr)
 		w.isFirst = false
 	}
-	_, err := os.Stdout.Write(p)
-	return err
+	w.buf = w.buf + string(p)
+	if !hasMore {
+		fmt.Println(w.buf)
+	}
+	return nil
 }

@@ -8,8 +8,6 @@ import (
 	"net"
 )
 
-const maxMsgLen = 255
-
 func WriteBigIntWithLen(conn net.Conn, msg *Int) error {
 	msgBytes := msg.Bytes()
 

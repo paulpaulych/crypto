@@ -39,22 +39,41 @@ func (conf *SendConf) InitCmd(args []string) (cli.Cmd, cli.CmdConfError) {
 	if err != nil {
 		return nil, err
 	}
+	alreadyRead := new(uint)
+	*alreadyRead = 0
 	return &SendCmd{
 		addr:  addr,
 		alice: writer,
-		msg:   &stringReader{s: msg},
+		msg:   &stringReader{s: msg, alreadyRead: alreadyRead},
 	}, nil
 }
 
 type stringReader struct {
-	s string
+	s           string
+	alreadyRead *uint
 }
 
-func (sr stringReader) Read(uint) (*nio.BytePage, error) {
+func (sr stringReader) TotalBytes() (uint, error) {
+	return uint(len([]byte(sr.s))), nil
+}
+
+func (sr stringReader) Read(size uint) (*nio.BytePage, error) {
+	bytes := []byte(sr.s)
+	from := *sr.alreadyRead
+	to := minUint(*sr.alreadyRead+size, uint(len(bytes)))
+	*sr.alreadyRead = *(sr.alreadyRead) + size
 	return &nio.BytePage{
-		Bytes:   []byte(sr.s),
-		HasMore: false,
+		Bytes:   bytes[from:to],
+		HasMore: to != uint(len(bytes)),
 	}, nil
+}
+
+func minUint(x uint, y uint) uint {
+	if x < y {
+		return x
+	} else {
+		return y
+	}
 }
 
 type SendCmd struct {
