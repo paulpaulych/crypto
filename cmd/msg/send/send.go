@@ -1,11 +1,10 @@
 package send
 
 import (
-	"flag"
 	"fmt"
 	"github.com/paulpaulych/crypto/internal/app/messaging"
 	"github.com/paulpaulych/crypto/internal/app/messaging/protocols"
-	cli2 "github.com/paulpaulych/crypto/internal/infra/cli"
+	"github.com/paulpaulych/crypto/internal/infra/cli"
 	"math/big"
 )
 
@@ -15,28 +14,30 @@ func (conf *SendConf) CmdName() string {
 	return "send"
 }
 
-func (conf *SendConf) InitCmd(args []string) (cli2.Cmd, cli2.CmdConfError) {
-	flags := flag.NewFlagSet(conf.CmdName(), flag.ContinueOnError)
+func (conf *SendConf) InitCmd(args []string) (cli.Cmd, cli.CmdConfError) {
+	flagsSpec := cli.NewFlagSpec(conf.CmdName(), map[string]string{
+		"protocol": "protocol",
+		"prime":    "prime integer",
+	})
 
-	protocolPtr := flags.String("protocol", "", "protocol")
-	primePtr := flags.String("prime", "", "prime integer")
-
-	err := cli2.Parse(flags, args)
+	flags, err := flagsSpec.Parse(args)
 	if err != nil {
 		return nil, err
 	}
 
-	if flags.NArg() < 2 {
-		return nil, cli2.NewCmdConfError("args required: [host:port] [message]", nil)
+	if len(flags.Args) < 2 {
+		return nil, cli.NewCmdConfError("args required: [host:port] [message]", nil)
 	}
 
-	addr, msgStr := flags.Arg(0), flags.Arg(1)
+	addr, msgStr := flags.Args[0], flags.Args[1]
 	msg, success := new(big.Int).SetString(msgStr, 10)
 	if !success {
-		return nil, cli2.NewCmdConfError("message must be integer", nil)
+		return nil, cli.NewCmdConfError("message must be integer", nil)
 	}
 
-	writer, err := writerForProtocol(*protocolPtr, *primePtr)
+	protocol := flags.Flags["protocol"].GetOr("shamir")
+	prime := flags.Flags["prime"].Get()
+	writer, err := writerForProtocol(protocol, prime)
 	if err != nil {
 		return nil, err
 	}
@@ -53,19 +54,19 @@ func (cmd *SendCmd) Run() error {
 	return messaging.SendMsg(cmd.addr, cmd.msg, cmd.writer)
 }
 
-func writerForProtocol(name string, primeStr string) (messaging.WriteMsg, cli2.CmdConfError) {
+func writerForProtocol(name string, primeStr *string) (messaging.WriteMsg, cli.CmdConfError) {
 	switch name {
 	case "shamir":
-		if len(primeStr) == 0 {
-			return nil, cli2.NewCmdConfError("shamir protocol requires -prime flag", nil)
+		if primeStr == nil || len(*primeStr) == 0 {
+			return nil, cli.NewCmdConfError("shamir protocol requires -prime flag", nil)
 		}
-		prime, success := new(big.Int).SetString(primeStr, 10)
+		prime, success := new(big.Int).SetString(*primeStr, 10)
 		if !success {
-			return nil, cli2.NewCmdConfError("cannot parse prime", nil)
+			return nil, cli.NewCmdConfError("cannot parse prime", nil)
 		}
 		return protocols.ShamirWriter(prime), nil
 	default:
 		msg := fmt.Sprintf("unknown protocol '%s'", name)
-		return nil, cli2.NewCmdConfError(msg, nil)
+		return nil, cli.NewCmdConfError(msg, nil)
 	}
 }

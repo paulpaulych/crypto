@@ -14,6 +14,14 @@ type CmdConf interface {
 	InitCmd(args []string) (Cmd, CmdConfError)
 }
 
+type Usage = string
+
+type CmdConfError interface {
+	Error() string
+	Trace() []string
+	Usage() *Usage
+}
+
 func InitSubCmd(subConfigs []CmdConf, args []string) (Cmd, CmdConfError) {
 	if len(args) < 1 {
 		return nil, noSubCmdError(subConfigs)

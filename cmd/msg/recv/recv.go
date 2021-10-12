@@ -1,11 +1,10 @@
 package recv
 
 import (
-	"flag"
 	"fmt"
 	"github.com/paulpaulych/crypto/internal/app/messaging"
 	"github.com/paulpaulych/crypto/internal/app/messaging/protocols"
-	cli2 "github.com/paulpaulych/crypto/internal/infra/cli"
+	"github.com/paulpaulych/crypto/internal/infra/cli"
 	"net"
 )
 
@@ -15,24 +14,24 @@ func (conf *RecvConf) CmdName() string {
 	return "recv"
 }
 
-func (conf *RecvConf) InitCmd(args []string) (cli2.Cmd, cli2.CmdConfError) {
-	flags := flag.NewFlagSet(conf.CmdName(), flag.ContinueOnError)
+func (conf *RecvConf) InitCmd(args []string) (cli.Cmd, cli.CmdConfError) {
+	flagsSpec := cli.NewFlagSpec(conf.CmdName(), map[string]string{
+		"protocol": "protocol",
+		"host":     "host to bind",
+		"port":     "port to bind",
+	})
 
-	protocol := flags.String("protocol", "", "protocol")
-	bindHostPtr := flags.String("host", "localhost", "host to bind")
-	bindPortPtr := flags.String("port", "80", "port to bind")
-
-	err := cli2.Parse(flags, args)
+	flags, err := flagsSpec.Parse(args)
 	if err != nil {
 		return nil, err
 	}
 
-	if flags.NArg() < 1 {
+	host := flags.Flags["host"].GetOr("localhost")
+	port := flags.Flags["port"].GetOr("4444")
+	addr := net.JoinHostPort(host, port)
 
-	}
-
-	addr := net.JoinHostPort(*bindHostPtr, *bindPortPtr)
-	reader, err := readerForProtocol(*protocol)
+	protocol := flags.Flags["protocol"].GetOr("shamir")
+	reader, err := readerForProtocol(protocol)
 	if err != nil {
 		return nil, err
 	}
@@ -48,12 +47,12 @@ func (cmd *RecvCmd) Run() error {
 	return messaging.ListenForMsg(cmd.bindAddr, cmd.reader)
 }
 
-func readerForProtocol(name string) (messaging.ReadMsg, cli2.CmdConfError) {
+func readerForProtocol(name string) (messaging.ReadMsg, cli.CmdConfError) {
 	switch name {
 	case "shamir":
 		return protocols.ShamirReader(), nil
 	default:
 		msg := fmt.Sprintf("unknown protocol '%s'", name)
-		return nil, cli2.NewCmdConfError(msg, nil)
+		return nil, cli.NewCmdConfError(msg, nil)
 	}
 }
