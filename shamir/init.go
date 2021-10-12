@@ -16,7 +16,7 @@ func initNode(p *Int, rand func(max *Int) *Int) (c, d *Int, e error) {
 		d, e = commons.Reverse(c, new(Int).Sub(p, NewInt(1)))
 
 		if e != nil {
-			log.Printf("shamir node initialization failed: '%s'. Retrying...", e)
+			log.Printf("shamir node initialization failed: %s. Retrying...", e)
 			continue
 		}
 

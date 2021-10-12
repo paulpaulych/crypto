@@ -1,48 +1,44 @@
 package main
 
 import (
-	"flag"
 	"fmt"
-	"github.com/paulpaulych/crypto/shamir/cli/cmd"
-	args2 "github.com/paulpaulych/crypto/shamir/cli/cmd/flags"
-	"log"
+	. "github.com/paulpaulych/crypto/shamir/cli/cmd/common"
+	"github.com/paulpaulych/crypto/shamir/cli/cmd/msg"
 	"os"
+	"strings"
 )
 
 func main() {
-	if len(os.Args) < 2 {
-		fmt.Println("send or recv subcommand is required")
+
+	subConfigs := []CmdConf{
+		&msg.MsgConf{},
+	}
+
+	cmd, confErr := InitSubCmd(subConfigs, os.Args[1:])
+	if confErr != nil {
+		printConfError(confErr)
 		os.Exit(1)
 	}
 
-	cmd := os.Args[1]
-	switch cmd {
-	case "send":
-		flagSet := flag.NewFlagSet("send", flag.ExitOnError)
-		var flags, err = args2.ParseSendCmdFlags(flagSet, os.Args[2:])
-		if err != nil {
-			flag.PrintDefaults()
-			os.Exit(1)
-		}
-		err = command.SendShamirEncrypted(flags)
-		if err != nil {
-			log.Printf("can't send: %v", err)
-			os.Exit(1)
-		}
-	case "recv":
-		flagSet := flag.NewFlagSet("recv", flag.ExitOnError)
-		flags, err := args2.ParseRecvCmdFlags(flagSet, os.Args[2:])
-		if err != nil {
-			flag.PrintDefaults()
-			os.Exit(1)
-		}
-		err = command.RecvMessages(flags)
-		if err != nil {
-			log.Printf("can't start server: %v", err)
-			return
-		}
-	default:
-		fmt.Println("only send and recv commands supported")
+	runErr := cmd.Run()
+	if runErr != nil {
+		fmt.Println(runErr)
 		os.Exit(1)
 	}
+
+	os.Exit(0)
+}
+
+func printConfError(e CmdConfError) {
+	if e.Trace() != nil && len(e.Trace()) != 0 {
+		path := strings.Join(e.Trace(), " ")
+		fmt.Printf("%s: %s\n", path, e.Error())
+	} else {
+		fmt.Println(e.Error())
+	}
+
+	if e.Usage() == nil {
+		return
+	}
+	println(*e.Usage())
 }
