@@ -8,6 +8,7 @@ import (
 	"github.com/paulpaulych/crypto/internal/infra/cli"
 	"io"
 	"math/big"
+	"os"
 	"strings"
 )
 
@@ -54,6 +55,12 @@ func chooseMsgReader(input string, msg string) (io.Reader, error) {
 	switch input {
 	case "console":
 		return strings.NewReader(msg), nil
+	case "file":
+		f, err := os.Open(msg)
+		if err != nil {
+			return nil, err
+		}
+		return f, nil
 	default:
 		return nil, errors.New("unknown input type")
 	}
