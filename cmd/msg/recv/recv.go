@@ -10,6 +10,8 @@ import (
 	"github.com/paulpaulych/crypto/internal/infra/cli"
 	"log"
 	"net"
+	"os"
+	"time"
 )
 
 type RecvConf struct{}
@@ -69,6 +71,17 @@ func outputFactory(output string) (OutputFactory, error) {
 		return func(from net.Addr) nio.ClosableWriter {
 			prefix := fmt.Sprintf("RECEIVED MESSAGE FROM %s: ", from)
 			return nio.NewConsoleWriter([]byte(prefix))
+		}, nil
+	case "file":
+		return func(from net.Addr) nio.ClosableWriter {
+			fName := fmt.Sprintf("msg_from_%s_at_%v.txt", from.String(), time.Now().UnixMilli())
+			newFile := func() (*os.File, error) {
+				return os.Create(fName)
+			}
+			onSaved := func() {
+				log.Printf("received message saved to file %s", fName)
+			}
+			return nio.NewFileWriter(newFile, onSaved)
 		}, nil
 	default:
 		return nil, errors.New("invalid output type")
