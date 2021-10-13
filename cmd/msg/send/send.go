@@ -1,12 +1,14 @@
 package send
 
 import (
+	"errors"
 	"fmt"
 	"github.com/paulpaulych/crypto/internal/app/messaging/msg-core"
-	"github.com/paulpaulych/crypto/internal/app/messaging/nio"
 	"github.com/paulpaulych/crypto/internal/app/messaging/protocols"
 	"github.com/paulpaulych/crypto/internal/infra/cli"
+	"io"
 	"math/big"
+	"strings"
 )
 
 type SendConf struct{}
@@ -19,6 +21,7 @@ func (conf *SendConf) InitCmd(args []string) (cli.Cmd, cli.CmdConfError) {
 	flagsSpec := cli.NewFlagSpec(conf.CmdName(), map[string]string{
 		"protocol": "protocol",
 		"prime":    "prime integer",
+		"i":        "message input type: file or arg",
 	})
 
 	flags, err := flagsSpec.Parse(args)
@@ -35,51 +38,31 @@ func (conf *SendConf) InitCmd(args []string) (cli.Cmd, cli.CmdConfError) {
 
 	protocol := flags.Flags["protocol"].GetOr("shamir")
 	prime := flags.Flags["prime"].Get()
-	writer, err := writerForProtocol(protocol, prime)
+	input := flags.Flags["i"].GetOr("console")
+	msgReader, e := chooseMsgReader(input, msg)
+	if e != nil {
+		return nil, cli.NewCmdConfError(e.Error(), nil)
+	}
+	writer, e := writerForProtocol(protocol, prime)
 	if err != nil {
 		return nil, err
 	}
-	alreadyRead := new(uint)
-	*alreadyRead = 0
-	return &SendCmd{
-		addr:  addr,
-		alice: writer,
-		msg:   &stringReader{s: msg, alreadyRead: alreadyRead},
-	}, nil
+	return &SendCmd{addr: addr, alice: writer, msg: msgReader}, nil
 }
 
-type stringReader struct {
-	s           string
-	alreadyRead *uint
-}
-
-func (sr stringReader) TotalBytes() (uint, error) {
-	return uint(len([]byte(sr.s))), nil
-}
-
-func (sr stringReader) Read(size uint) (*nio.BytePage, error) {
-	bytes := []byte(sr.s)
-	from := *sr.alreadyRead
-	to := minUint(*sr.alreadyRead+size, uint(len(bytes)))
-	*sr.alreadyRead = *(sr.alreadyRead) + size
-	return &nio.BytePage{
-		Bytes:   bytes[from:to],
-		HasMore: to != uint(len(bytes)),
-	}, nil
-}
-
-func minUint(x uint, y uint) uint {
-	if x < y {
-		return x
-	} else {
-		return y
+func chooseMsgReader(input string, msg string) (io.Reader, error) {
+	switch input {
+	case "console":
+		return strings.NewReader(msg), nil
+	default:
+		return nil, errors.New("unknown input type")
 	}
 }
 
 type SendCmd struct {
 	addr  string
 	alice msg_core.Alice
-	msg   nio.ByteReader
+	msg   io.Reader
 }
 
 func (cmd *SendCmd) Run() error {

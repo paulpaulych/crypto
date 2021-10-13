@@ -1,7 +1,7 @@
 package msg_core
 
 import (
-	"github.com/paulpaulych/crypto/internal/app/messaging/nio"
+	"io"
 	"net"
 )
 
@@ -13,5 +13,5 @@ type Bob = func(net.Conn)
 
 type Alice interface {
 	ProtocolCode() ProtocolCode
-	Write(msg nio.ByteReader, conn net.Conn) error
+	Write(msg io.Reader, conn net.Conn) error
 }
