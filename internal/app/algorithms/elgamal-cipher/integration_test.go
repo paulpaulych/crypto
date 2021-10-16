@@ -1,4 +1,4 @@
-package shamir_cipher
+package elgamal_cipher
 
 import (
 	"fmt"

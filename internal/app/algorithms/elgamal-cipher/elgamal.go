@@ -1,4 +1,4 @@
-package shamir_cipher
+package elgamal_cipher
 
 import (
 	"crypto/rand"
@@ -27,7 +27,7 @@ func Send(cPub *dh.CommonPublicKey, bobPub *Int, msg *Int) *Encoded {
 }
 
 type Bob struct {
-	CommonPub dh.CommonPublicKey
+	CommonPub *dh.CommonPublicKey
 	Pub       *Int
 	sec       *Int
 }

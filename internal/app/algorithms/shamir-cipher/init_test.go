@@ -12,7 +12,7 @@ func Test_initNode(t *testing.T) {
 		c    *Int
 	}{
 		{"case1", NewInt(17), NewInt(3)},
-		{"case1", NewInt(3), NewInt(2)},
+		{"case1", NewInt(10), NewInt(2)},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

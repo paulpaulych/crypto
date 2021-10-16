@@ -1,7 +1,6 @@
 package arythmetics
 
 import (
-	"log"
 	. "math/big"
 	"reflect"
 	"testing"
@@ -43,26 +42,6 @@ func TestPowByMod(t *testing.T) {
 			args: args{NewInt(7), NewInt(57), NewInt(100)},
 			want: NewInt(7),
 		},
-		{
-			name: "3^35759111 mod 123654861",
-			args: args{s2BigInt("3"), s2BigInt("35759111"), s2BigInt("123654861")},
-			want: s2BigInt("32845410"),
-		},
-		{
-			name: "102525021^91520007 mod 123654861",
-			args: args{s2BigInt("102525021"), s2BigInt("91520007"), s2BigInt("123654861")},
-			want: s2BigInt("32845410"),
-		},
-		{
-			name: "102525021^91520007 mod 123654861",
-			args: args{s2BigInt("102525021"), s2BigInt("91520007"), s2BigInt("123654861")},
-			want: s2BigInt("32845410"),
-		},
-		{
-			name: "102525021^91520007 mod 123654861",
-			args: args{s2BigInt("102525021"), s2BigInt("91520007"), s2BigInt("123654861")},
-			want: s2BigInt("32845410"),
-		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -72,12 +51,4 @@ func TestPowByMod(t *testing.T) {
 			}
 		})
 	}
-}
-
-func s2BigInt(s string) *Int {
-	v, success := new(Int).SetString(s, 10)
-	if success != true {
-		log.Fatalf("cannot convert '%s' to Int", s)
-	}
-	return v
 }
