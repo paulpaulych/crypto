@@ -1,4 +1,4 @@
-package shamir
+package shamir_cipher
 
 import (
 	"github.com/paulpaulych/crypto/internal/app/algorithms/arythmetics"
@@ -16,7 +16,7 @@ func initNode(p *Int, rand func(max *Int) *Int) (c, d *Int, e error) {
 		d, e = arythmetics.Reverse(c, new(Int).Sub(p, NewInt(1)))
 
 		if e != nil {
-			log.Printf("shamir node initialization failed: %s. Retrying...", e)
+			log.Printf("shamir-cipher node initialization failed: %s. Retrying...", e)
 			continue
 		}
 

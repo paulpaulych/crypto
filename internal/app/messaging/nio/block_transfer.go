@@ -1,7 +1,6 @@
 package nio
 
 import (
-	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -38,22 +37,19 @@ func (b BlockTransfer) WriteBlocks(
 			return nil
 		}
 		if err != nil {
-			errMsg := fmt.Sprintf("WriteBlocks: error reading block: %v", err)
-			return errors.New(errMsg)
+			return fmt.Errorf("WriteBlocks: error reading block: %v", err)
 		}
 
 		{
 			_, err = props.MetaWriter.Write([]byte{byte(actualRead)})
 			if err != nil {
-				errMsg := fmt.Sprintf("WriteBlocks: writing metadata failed: %v", err)
-				return errors.New(errMsg)
+				return fmt.Errorf("WriteBlocks: writing metadata failed: %v", err)
 			}
 		}
 
 		_, err = props.DataWriter.Write(buf)
 		if err != nil {
-			errMsg := fmt.Sprintf("WriteBlocks: error writing block: %v", err)
-			return errors.New(errMsg)
+			return fmt.Errorf("WriteBlocks: error writing block: %v", err)
 		}
 	}
 }
@@ -87,8 +83,7 @@ func (b BlockTransfer) ReadBlocks(props ReadProps) error {
 		log.Printf("received block: len=%v, bytes=%v", len(blockBuf), blockBuf)
 		_, err = props.To.Write(blockBuf[:int(metaByte)])
 		if err != nil {
-			errMsg := fmt.Sprintf("error writing received message: %v", err)
-			return errors.New(errMsg)
+			return fmt.Errorf("error writing received message: %v", err)
 		}
 	}
 }

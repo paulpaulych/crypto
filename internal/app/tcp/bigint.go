@@ -1,7 +1,6 @@
 package tcp
 
 import (
-	"errors"
 	"fmt"
 	"log"
 	. "math/big"
@@ -23,8 +22,7 @@ func WriteBigIntWithLen(conn net.Conn, msg *Int) error {
 		return err
 	}
 	if uint32(actuallyWrote) != msgLen {
-		errMsg := fmt.Sprintf("tried to write %v byte but failed, written: %v", msgLen, actuallyWrote)
-		return errors.New(errMsg)
+		return fmt.Errorf("tried to write %v byte but failed, written: %v", msgLen, actuallyWrote)
 	}
 	return nil
 }
@@ -40,8 +38,7 @@ func ReadBigIntWithLen(conn net.Conn) (*Int, error) {
 		return nil, err
 	}
 	if actuallyRead != int(msgLen) {
-		errMsg := fmt.Sprintf("failed to read %v bytes, %v", msgLen, actuallyRead)
-		return nil, errors.New(errMsg)
+		return nil, fmt.Errorf("failed to read %v bytes, %v", msgLen, actuallyRead)
 	}
 	msg := new(Int).SetBytes(msgBuf)
 

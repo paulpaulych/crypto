@@ -1,8 +1,7 @@
-package shamir
+package shamir_cipher
 
 import (
 	"crypto/rand"
-	"errors"
 	"fmt"
 	"github.com/paulpaulych/crypto/internal/app/algorithms/arythmetics"
 	"log"
@@ -16,12 +15,10 @@ type Alice struct {
 
 func (a *Alice) Step1(msg *Int) (*Int, error) {
 	if msg.Cmp(a.P) != -1 {
-		err := fmt.Sprintf("Shamir FATAL: msg=%v cannot be greater than P=%v", msg, a.P)
-		return nil, errors.New(err)
+		return nil, fmt.Errorf("shamir-cipher FATAL: msg=%v cannot be greater than P=%v", msg, a.P)
 	}
 	if msg.Cmp(NewInt(1)) != 1 {
-		err := fmt.Sprintf("Shamir FATAL: msg=%v cannot be less than 2", msg)
-		return nil, errors.New(err)
+		return nil, fmt.Errorf("Shamir FATAL: msg=%v cannot be less than 2", msg)
 	}
 	return arythmetics.PowByMod(msg, a.C, a.P), nil
 }
@@ -37,8 +34,7 @@ func InitAlice(p *Int) (*Alice, error) {
 	}
 	c, d, err := initNode(p, randomInt)
 	if err != nil {
-		errMsg := fmt.Sprintf("writing step3out failed: %v", err)
-		return nil, errors.New(errMsg)
+		return nil, fmt.Errorf("writing step3out failed: %v", err)
 	}
 	alice := &Alice{P: p, C: c, D: d}
 	log.Printf("Alice initialized: {P=%v,c=%v,d=%v}", alice.P, alice.C, alice.D)

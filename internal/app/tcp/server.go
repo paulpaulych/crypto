@@ -1,7 +1,6 @@
 package tcp
 
 import (
-	"errors"
 	"fmt"
 	"log"
 	"net"
@@ -10,8 +9,7 @@ import (
 func StartServer(bindAddr string, handler func(net.Conn)) error {
 	listener, err := net.Listen("tcp", bindAddr)
 	if err != nil {
-		errMsg := fmt.Sprintf("can't bind to %s: %v", bindAddr, err)
-		return errors.New(errMsg)
+		return fmt.Errorf("can't bind to %s: %v", bindAddr, err)
 	}
 	defer func() { _ = listener.Close() }()
 
@@ -21,10 +19,6 @@ func StartServer(bindAddr string, handler func(net.Conn)) error {
 		if err != nil {
 			log.Printf("can't accept connection: %v", err)
 		}
-		handler(conn)
-		err = conn.Close()
-		if err != nil {
-			log.Printf("failed to close connection: %v", err)
-		}
+		go handler(conn)
 	}
 }

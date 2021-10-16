@@ -1,7 +1,6 @@
 package protocols
 
 import (
-	"errors"
 	"fmt"
 	"github.com/paulpaulych/crypto/internal/app/messaging/msg-core"
 	"github.com/paulpaulych/crypto/internal/app/messaging/nio"
@@ -24,14 +23,13 @@ func ShamirWriter(p *big.Int) msg_core.Alice {
 func ChooseBob(
 	code msg_core.ProtocolCode,
 	out func(Addr) nio.ClosableWriter,
-	onErr func(string),
+	onErr func(error),
 ) (msg_core.Bob, error) {
 	switch code {
 	case Shamir:
 		return ShamirBob(out, onErr), nil
 	default:
-		msg := fmt.Sprintf("unknown protocol code %v", code)
-		return nil, errors.New(msg)
+		return nil, fmt.Errorf("unknown protocol code %v", code)
 	}
 }
 

@@ -10,7 +10,6 @@ import (
 	"github.com/paulpaulych/crypto/internal/infra/cli"
 	"log"
 	"net"
-	"os"
 	"time"
 )
 
@@ -54,10 +53,10 @@ type RecvCmd struct {
 }
 
 func (cmd *RecvCmd) Run() error {
+	onErr := func(e error) {
+		log.Printf("error reading message: %s", e)
+	}
 	chooseBob := func(code msg_core.ProtocolCode) (msg_core.Bob, error) {
-		onErr := func(e string) {
-			log.Printf("error reading message: %s", e)
-		}
 		return protocols.ChooseBob(code, cmd.output, onErr)
 	}
 	return tcp.StartServer(cmd.bindAddr, msg_core.RecvMessage(chooseBob))
@@ -69,19 +68,15 @@ func outputFactory(output string) (OutputFactory, error) {
 	switch output {
 	case "console":
 		return func(from net.Addr) nio.ClosableWriter {
-			prefix := fmt.Sprintf("RECEIVED MESSAGE FROM %s: ", from)
+			prefix := fmt.Sprintln("RECEIVED MESSAGE FROM", from)
 			return nio.NewConsoleWriter([]byte(prefix))
 		}, nil
 	case "file":
 		return func(from net.Addr) nio.ClosableWriter {
 			fName := fmt.Sprintf("msg_from_%s_at_%v.txt", from.String(), time.Now().UnixMilli())
-			newFile := func() (*os.File, error) {
-				return os.Create(fName)
-			}
-			onSaved := func() {
+			return nio.NewFileWriter(fName, func() {
 				log.Printf("received message saved to file %s", fName)
-			}
-			return nio.NewFileWriter(newFile, onSaved)
+			})
 		}, nil
 	default:
 		return nil, errors.New("invalid output type")

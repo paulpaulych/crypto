@@ -1,4 +1,4 @@
-package shamir
+package shamir_cipher
 
 import (
 	"fmt"

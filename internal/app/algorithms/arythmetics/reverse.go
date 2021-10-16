@@ -1,7 +1,6 @@
 package arythmetics
 
 import (
-	"errors"
 	"fmt"
 	"math/big"
 )
@@ -11,8 +10,7 @@ func Reverse(c, mod *big.Int) (*big.Int, error) {
 	gcdExOut := GcdEx(mod, c)
 
 	if gcdExOut.gcd.Cmp(big.NewInt(1)) != 0 {
-		msg := fmt.Sprintf("can't find reverse: %v and %v aren't mutually simple", c, mod)
-		return nil, errors.New(msg)
+		return nil, fmt.Errorf("can't find reverse: %v and %v aren't mutually simple", c, mod)
 	}
 
 	reverse := gcdExOut.y

@@ -1,8 +1,6 @@
 package nio
 
 import (
-	"errors"
-	"fmt"
 	"io"
 )
 
@@ -31,8 +29,7 @@ type fnWriter struct {
 func (w fnWriter) Write(p []byte) (int, error) {
 	err := w.fn(p)
 	if err != nil {
-		errMsg := fmt.Sprintf("encoder error: %s", err)
-		return 0, errors.New(errMsg)
+		return 0, err
 	}
 	return len(p), nil
 }

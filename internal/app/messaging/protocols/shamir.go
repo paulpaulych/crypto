@@ -1,9 +1,8 @@
 package protocols
 
 import (
-	"errors"
 	"fmt"
-	"github.com/paulpaulych/crypto/internal/app/algorithms/shamir"
+	"github.com/paulpaulych/crypto/internal/app/algorithms/shamir-cipher"
 	"github.com/paulpaulych/crypto/internal/app/messaging/msg-core"
 	"github.com/paulpaulych/crypto/internal/app/messaging/nio"
 	"github.com/paulpaulych/crypto/internal/app/tcp"
@@ -19,8 +18,7 @@ func ShamirWriteFn(p *Int) func(msg io.Reader, conn Conn) error {
 	return func(msg io.Reader, conn Conn) error {
 		err := tcp.WriteBigIntWithLen(conn, p)
 		if err != nil {
-			errMsg := fmt.Sprintf("writing P failed: %v", err)
-			return errors.New(errMsg)
+			return fmt.Errorf("writing P failed: %v", err)
 		}
 
 		err = nio.NewBlockTransfer(blockSize).WriteBlocks(nio.WriteProps{
@@ -29,8 +27,7 @@ func ShamirWriteFn(p *Int) func(msg io.Reader, conn Conn) error {
 			DataWriter: nio.NewFnWriter(shamirEncoder(p, conn)),
 		})
 		if err != nil {
-			errMsg := fmt.Sprintf("error sending block: %v", err)
-			return errors.New(errMsg)
+			return fmt.Errorf("error sending block: %v", err)
 		}
 		return nil
 	}
@@ -38,7 +35,7 @@ func ShamirWriteFn(p *Int) func(msg io.Reader, conn Conn) error {
 
 func shamirEncoder(p *Int, conn Conn) func([]byte) error {
 	return func(block []byte) error {
-		alice, err := shamir.InitAlice(p)
+		alice, err := shamir_cipher.InitAlice(p)
 		if err != nil {
 			log.Printf("failed to init alice: %d", err)
 			return err
@@ -47,27 +44,23 @@ func shamirEncoder(p *Int, conn Conn) func([]byte) error {
 		msgInt := new(Int).SetBytes(block)
 		step1out, err := alice.Step1(msgInt)
 		if err != nil {
-			errMsg := fmt.Sprintf("writing step1out failed: %v", err)
-			return errors.New(errMsg)
+			return fmt.Errorf("writing step1out failed: %v", err)
 		}
 
 		err = tcp.WriteBigIntWithLen(conn, step1out)
 		if err != nil {
-			errMsg := fmt.Sprintf("writing step1out failed: %v", err)
-			return errors.New(errMsg)
+			return fmt.Errorf("writing step1out failed: %v", err)
 		}
 
 		step2out, err := tcp.ReadBigIntWithLen(conn)
 		if err != nil {
-			errMsg := fmt.Sprintf("reading step2out failed: %v", err)
-			return errors.New(errMsg)
+			return fmt.Errorf("reading step2out failed: %v", err)
 		}
 
 		step3out := alice.Step3(step2out)
 		err = tcp.WriteBigIntWithLen(conn, step3out)
 		if err != nil {
-			errMsg := fmt.Sprintf("writing step3out failed: %v", err)
-			return errors.New(errMsg)
+			return fmt.Errorf("writing step3out failed: %v", err)
 		}
 
 		return nil
@@ -76,7 +69,7 @@ func shamirEncoder(p *Int, conn Conn) func([]byte) error {
 
 func ShamirBob(
 	output func(Addr) nio.ClosableWriter,
-	onErr func(string),
+	onErr func(error),
 ) msg_core.Bob {
 	return func(conn Conn) {
 		out := output(conn.RemoteAddr())
@@ -89,7 +82,7 @@ func ShamirBob(
 
 		p, err := tcp.ReadBigIntWithLen(conn)
 		if err != nil {
-			onErr(fmt.Sprintf("can't read p: %v", err))
+			onErr(fmt.Errorf("can't read p: %v", err))
 			return
 		}
 
@@ -99,7 +92,7 @@ func ShamirBob(
 			To:         out,
 		})
 		if err != nil {
-			onErr(fmt.Sprintf("can't transfer: %v", err))
+			onErr(fmt.Errorf("can't transfer: %v", err))
 			return
 		}
 	}
@@ -107,9 +100,9 @@ func ShamirBob(
 
 func decoder(p *Int, conn Conn) func(buf []byte) (int, error) {
 	return func(buf []byte) (int, error) {
-		bob, err := shamir.InitBob(p)
+		bob, err := shamir_cipher.InitBob(p)
 		if err != nil {
-			return 0, errors.New(fmt.Sprintf("failed to init bob: %d", err))
+			return 0, fmt.Errorf("failed to init bob: %d", err)
 		}
 
 		step1out, err := tcp.ReadBigIntWithLen(conn)
@@ -117,18 +110,18 @@ func decoder(p *Int, conn Conn) func(buf []byte) (int, error) {
 			return 0, io.EOF
 		}
 		if err != nil {
-			return 0, errors.New(fmt.Sprintf("can't read step1out: %v", err))
+			return 0, fmt.Errorf("can't read step1out: %v", err)
 		}
 
 		step2out := bob.Step2(step1out)
 		err = tcp.WriteBigIntWithLen(conn, step2out)
 		if err != nil {
-			return 0, errors.New(fmt.Sprintf("can't write step2out: %v", err))
+			return 0, fmt.Errorf("can't write step2out: %v", err)
 		}
 
 		step3out, err := tcp.ReadBigIntWithLen(conn)
 		if err != nil {
-			return 0, errors.New(fmt.Sprintf("can't write step2out: %v", err))
+			return 0, fmt.Errorf("can't write step2out: %v", err)
 		}
 		bob.Decode(step3out).FillBytes(buf)
 		return blockSize, nil
