@@ -14,7 +14,7 @@ type SendArgs struct {
 	Msg  *big.Int
 }
 
-func SendMsg(addr string, msg io.Reader, alice Alice) error {
+func SendMsg(addr string, msg io.Reader, alice ConnWriter) error {
 	conn, err := Dial("tcp", addr)
 	if err != nil {
 		return fmt.Errorf("can't connect to %s: %v", addr, err)
@@ -24,7 +24,7 @@ func SendMsg(addr string, msg io.Reader, alice Alice) error {
 	protocolCode := alice.ProtocolCode()
 	err = tcp.WriteUint32(conn, protocolCode)
 	if err != nil {
-		return fmt.Errorf("failed to write protocol protocolCode %v: %v", protocolCode, err)
+		return fmt.Errorf("failed to write protocol code %v: %v", protocolCode, err)
 	}
 
 	log.Printf("connected to %s", addr)

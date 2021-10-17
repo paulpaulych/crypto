@@ -14,10 +14,10 @@ func StartServer(bindAddr string, handler func(net.Conn)) error {
 	defer func() { _ = listener.Close() }()
 
 	for {
-		log.Printf("waiting for connection on %v", bindAddr)
+		log.Printf("TCP_SERVER: waiting for connection on %v", bindAddr)
 		conn, err := listener.Accept()
 		if err != nil {
-			log.Printf("can't accept connection: %v", err)
+			log.Printf("TCP_SERVER: can't accept connection: %v", err)
 		}
 		go handler(conn)
 	}

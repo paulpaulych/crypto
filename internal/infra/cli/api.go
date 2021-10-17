@@ -11,7 +11,7 @@ type Cmd interface {
 
 type CmdConf interface {
 	CmdName() string
-	InitCmd(args []string) (Cmd, CmdConfError)
+	NewCmd(args []string) (Cmd, CmdConfError)
 }
 
 type Usage = string
@@ -33,7 +33,7 @@ func InitSubCmd(subConfigs []CmdConf, args []string) (Cmd, CmdConfError) {
 		if subCmdName != subConfig.CmdName() {
 			continue
 		}
-		subCmd, err := subConfig.InitCmd(args[1:])
+		subCmd, err := subConfig.NewCmd(args[1:])
 		if err != nil {
 			return nil, AppendTrace(err, subConfig.CmdName())
 		}

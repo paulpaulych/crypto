@@ -1,10 +1,9 @@
-package protocols
+package shamir
 
 import (
 	"fmt"
 	"github.com/paulpaulych/crypto/internal/app/algorithms/shamir-cipher"
-	"github.com/paulpaulych/crypto/internal/app/messaging/msg-core"
-	"github.com/paulpaulych/crypto/internal/app/messaging/nio"
+	nio "github.com/paulpaulych/crypto/internal/app/nio"
 	"github.com/paulpaulych/crypto/internal/app/tcp"
 	"io"
 	"log"
@@ -14,7 +13,7 @@ import (
 
 const blockSize = 4
 
-func ShamirWriteFn(p *Int) func(msg io.Reader, conn Conn) error {
+func WriteFn(p *Int) func(msg io.Reader, conn Conn) error {
 	return func(msg io.Reader, conn Conn) error {
 		err := tcp.WriteBigIntWithLen(conn, p)
 		if err != nil {
@@ -24,7 +23,7 @@ func ShamirWriteFn(p *Int) func(msg io.Reader, conn Conn) error {
 		err = nio.NewBlockTransfer(blockSize).WriteBlocks(nio.WriteProps{
 			From:       msg,
 			MetaWriter: conn,
-			DataWriter: nio.NewFnWriter(shamirEncoder(p, conn)),
+			DataWriter: nio.NewFnWriter(encoder(p, conn)),
 		})
 		if err != nil {
 			return fmt.Errorf("error sending block: %v", err)
@@ -33,7 +32,7 @@ func ShamirWriteFn(p *Int) func(msg io.Reader, conn Conn) error {
 	}
 }
 
-func shamirEncoder(p *Int, conn Conn) func([]byte) error {
+func encoder(p *Int, conn Conn) func([]byte) error {
 	return func(block []byte) error {
 		alice, err := shamir_cipher.InitAlice(p)
 		if err != nil {
@@ -67,11 +66,10 @@ func shamirEncoder(p *Int, conn Conn) func([]byte) error {
 	}
 }
 
-func ShamirBob(
+func ReadFn(
 	output func(Addr) nio.ClosableWriter,
-	onErr func(error),
-) msg_core.Bob {
-	return func(conn Conn) {
+) func(conn Conn) error {
+	return func(conn Conn) error {
 		out := output(conn.RemoteAddr())
 		defer func() {
 			err := out.Close()
@@ -82,19 +80,19 @@ func ShamirBob(
 
 		p, err := tcp.ReadBigIntWithLen(conn)
 		if err != nil {
-			onErr(fmt.Errorf("can't read p: %v", err))
-			return
+			return fmt.Errorf("can't read p: %s", err)
 		}
 
-		err = nio.NewBlockTransfer(blockSize).ReadBlocks(nio.ReadProps{
-			MetaReader: conn,
-			DataReader: nio.NewFnReader(decoder(p, conn)),
-			To:         out,
-		})
+		err = nio.NewBlockTransfer(blockSize).
+			ReadBlocks(nio.ReadProps{
+				MetaReader: conn,
+				DataReader: nio.NewFnReader(decoder(p, conn)),
+				To:         out,
+			})
 		if err != nil {
-			onErr(fmt.Errorf("can't transfer: %v", err))
-			return
+			return fmt.Errorf("can't transfer: %s", err)
 		}
+		return nil
 	}
 }
 

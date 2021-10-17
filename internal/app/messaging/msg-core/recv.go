@@ -6,9 +6,7 @@ import (
 	. "net"
 )
 
-type GetBobForProtocol = func(code ProtocolCode) (Bob, error)
-
-func RecvMessage(getBob GetBobForProtocol) func(Conn) {
+func RecvMessage(reader ConnReader) func(Conn) {
 	return func(conn Conn) {
 		defer func() { _ = conn.Close() }()
 
@@ -17,12 +15,14 @@ func RecvMessage(getBob GetBobForProtocol) func(Conn) {
 			log.Printf("failed to read protocol protocolCode: %s", err)
 			return
 		}
-		read, err := getBob(protocolCode)
-		if err != nil {
-			log.Printf("bob error: %s", err)
+		if protocolCode != reader.ProtocolCode() {
+			log.Printf("unsupprted protocol")
 			return
 		}
-
-		read(conn)
+		err = reader.MsgReader()(conn)
+		if err != nil {
+			log.Printf("error reading message: %s", err)
+			return
+		}
 	}
 }
