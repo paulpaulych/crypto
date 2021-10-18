@@ -1,8 +1,8 @@
 package shamir_cipher
 
 import (
-	"crypto/rand"
 	"github.com/paulpaulych/crypto/internal/app/algorithms/arythmetics"
+	"github.com/paulpaulych/crypto/internal/app/algorithms/rand"
 	"log"
 	. "math/big"
 )
@@ -21,11 +21,7 @@ func (b *Bob) Decode(step3Out *Int) *Int {
 }
 
 func InitBob(p *Int) (*Bob, error) {
-	randomInt := func(max *Int) *Int {
-		v, _ := rand.Int(rand.Reader, max)
-		return v
-	}
-	c, d, err := initNode(p, randomInt)
+	c, d, err := initNode(p, rand.CryptoSafeRandom())
 	if err != nil {
 		return nil, err
 	}

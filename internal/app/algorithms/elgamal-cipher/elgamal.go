@@ -1,9 +1,10 @@
 package elgamal_cipher
 
 import (
-	"crypto/rand"
 	. "github.com/paulpaulych/crypto/internal/app/algorithms/arythmetics"
 	dh "github.com/paulpaulych/crypto/internal/app/algorithms/diffie-hellman"
+	. "github.com/paulpaulych/crypto/internal/app/algorithms/rand"
+	"log"
 	. "math/big"
 )
 
@@ -20,9 +21,9 @@ func NewAlice(commonPub dh.CommonPublicKey, bobPub *Int) *Alice {
 	return &Alice{CommonPub: commonPub, BobPub: bobPub}
 }
 
-func (a Alice) Encode(msg *Int, rng func(max *Int) (*Int, error)) *Encoded {
+func (a Alice) Encode(msg *Int, random Random) *Encoded {
 	p := a.CommonPub.P()
-	secret, err := rng(p)
+	secret, err := FromToRandom(NewInt(2), p, random)()
 	if err != nil {
 		return nil
 	}
@@ -44,7 +45,10 @@ type Bob struct {
 
 func NewBob(commonPub dh.CommonPublicKey) *Bob {
 	maxSecret := new(Int).Sub(commonPub.P(), NewInt(1))
-	secret, _ := rand.Int(rand.Reader, maxSecret)
+	secret, err := FromToRandom(NewInt(0), maxSecret, CryptoSafeRandom())()
+	if err != nil {
+		log.Panicf("NewBob: error generating random int: %v", err)
+	}
 	pub := PowByMod(commonPub.G(), secret, commonPub.P())
 	return &Bob{
 		CommonPub: commonPub,

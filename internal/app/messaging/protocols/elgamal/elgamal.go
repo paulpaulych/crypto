@@ -1,11 +1,11 @@
 package elgamal
 
 import (
-	"crypto/rand"
 	"errors"
 	"fmt"
 	dh "github.com/paulpaulych/crypto/internal/app/algorithms/diffie-hellman"
 	"github.com/paulpaulych/crypto/internal/app/algorithms/elgamal-cipher"
+	"github.com/paulpaulych/crypto/internal/app/algorithms/rand"
 	"github.com/paulpaulych/crypto/internal/app/nio"
 	"github.com/paulpaulych/crypto/internal/app/tcp"
 	"io"
@@ -48,9 +48,7 @@ func encoder(
 
 		msgInt := new(Int).SetBytes(block)
 		log.Printf("ELGAMAL: data int: %v", msgInt)
-		encoded := alice.Encode(msgInt, func(max *Int) (*Int, error) {
-			return rand.Int(rand.Reader, max)
-		})
+		encoded := alice.Encode(msgInt, rand.CryptoSafeRandom())
 		log.Printf("ELGAMAL: R=%v, E=%v", encoded.R, encoded.E)
 		err := tcp.WriteBigIntWithLen(conn, encoded.R)
 		if err != nil {

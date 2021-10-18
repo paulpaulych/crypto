@@ -1,6 +1,7 @@
 package shamir_cipher
 
 import (
+	"github.com/paulpaulych/crypto/internal/app/algorithms/rand"
 	. "math/big"
 	"testing"
 )
@@ -16,7 +17,7 @@ func Test_initNode(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotC, gotD, err := initNode(tt.p, func(max *Int) *Int { return tt.c })
+			gotC, gotD, err := initNode(tt.p, rand.ConstRand(tt.c))
 			if err != nil {
 				t.Errorf("initNode() error = %v", err)
 				return

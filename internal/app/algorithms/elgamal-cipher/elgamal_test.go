@@ -3,12 +3,13 @@ package elgamal_cipher
 import (
 	"fmt"
 	dh "github.com/paulpaulych/crypto/internal/app/algorithms/diffie-hellman"
+	"github.com/paulpaulych/crypto/internal/app/algorithms/rand"
 	. "math/big"
 	"reflect"
 	"testing"
 )
 
-const randomInt = 3
+const randomInt = 1
 
 var commonPub, _ = dh.NewCommonPublicKey(NewInt(30803), NewInt(2))
 var bobPub = NewInt(28273)
@@ -57,9 +58,8 @@ func TestAlice_Encode(t *testing.T) {
 	for i, tt := range tests {
 		t.Run(fmt.Sprintf("case %v", i), func(t *testing.T) {
 			a := tt.alice
-			if got := a.Encode(tt.msg, func(max *Int) (*Int, error) {
-				return NewInt(randomInt), nil
-			}); !reflect.DeepEqual(got, tt.want) {
+			got := a.Encode(tt.msg, rand.ConstRand(NewInt(1)))
+			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("Encode() = %v, want %v", got, tt.want)
 			}
 		})

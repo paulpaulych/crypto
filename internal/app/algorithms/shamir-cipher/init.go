@@ -2,18 +2,26 @@ package shamir_cipher
 
 import (
 	"github.com/paulpaulych/crypto/internal/app/algorithms/arythmetics"
+	"github.com/paulpaulych/crypto/internal/app/algorithms/rand"
 	"log"
 	. "math/big"
 )
 
 // initNode for given P returns c,d satisfying (c*d)mod(p-1) = 1
-func initNode(p *Int, rand func(max *Int) *Int) (c, d *Int, e error) {
-	max := new(Int).Sub(p, NewInt(2))
-
+func initNode(p *Int, random rand.Random) (c, d *Int, e error) {
+	pSub1 := new(Int).Sub(p, NewInt(1))
+	fromToRand := rand.FromToRandom(
+		NewInt(2),
+		pSub1,
+		random,
+	)
 	for {
-		rFrom0ToMax := rand(new(Int).Sub(max, NewInt(1)))
-		c = new(Int).Add(rFrom0ToMax, NewInt(2))
-		d, e = arythmetics.Reverse(c, new(Int).Sub(p, NewInt(1)))
+		c, err := fromToRand()
+		if err != nil {
+			return nil, nil, err
+		}
+
+		d, e = arythmetics.Reverse(c, pSub1)
 
 		if e != nil {
 			log.Printf("shamir-cipher node initialization failed: %s. Retrying...", e)

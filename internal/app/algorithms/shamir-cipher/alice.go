@@ -1,9 +1,9 @@
 package shamir_cipher
 
 import (
-	"crypto/rand"
 	"fmt"
 	"github.com/paulpaulych/crypto/internal/app/algorithms/arythmetics"
+	"github.com/paulpaulych/crypto/internal/app/algorithms/rand"
 	"log"
 	. "math/big"
 )
@@ -28,11 +28,7 @@ func (a *Alice) Step3(step2Out *Int) *Int {
 }
 
 func InitAlice(p *Int) (*Alice, error) {
-	randomInt := func(max *Int) *Int {
-		v, _ := rand.Int(rand.Reader, max)
-		return v
-	}
-	c, d, err := initNode(p, randomInt)
+	c, d, err := initNode(p, rand.CryptoSafeRandom())
 	if err != nil {
 		return nil, fmt.Errorf("writing step3out failed: %v", err)
 	}

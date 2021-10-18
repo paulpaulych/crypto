@@ -3,6 +3,7 @@ package elgamal_cipher
 import (
 	"fmt"
 	. "github.com/paulpaulych/crypto/internal/app/algorithms/diffie-hellman"
+	"github.com/paulpaulych/crypto/internal/app/algorithms/rand"
 	"log"
 	. "math/big"
 	"reflect"
@@ -15,7 +16,7 @@ type testCase = struct {
 	msg *Int
 }
 
-func TestShamir(t *testing.T) {
+func TestElgamal(t *testing.T) {
 	commonPubKey, e := NewCommonPublicKey(NewInt(30803), NewInt(2))
 	if e != nil {
 		log.Panicf("failed to initialize test data: %v", e)
@@ -56,14 +57,12 @@ func TestShamir(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		testName := fmt.Sprintf("testCase for B={commonPubKey={P=%v,G=%v}, sec=%v, Pub=%v}, msg=%v",
+		testName := fmt.Sprintf("testCase for B={commonPubKey={P=%v,G=%v}, sec=%v, BobPub=%v}, msg=%v",
 			tt.bob.CommonPub.P(), tt.bob.CommonPub.G(), tt.bob.sec, tt.bob.Pub, tt.msg)
 
 		t.Run(testName, func(t *testing.T) {
 			alice := NewAlice(tt.bob.CommonPub, tt.bob.Pub)
-			encoded := alice.Encode(tt.msg, func(max *Int) (*Int, error) {
-				return NewInt(randomInt), nil
-			})
+			encoded := alice.Encode(tt.msg, rand.ConstRand(NewInt(randomInt)))
 			log.Printf("ELGAMAL: R=%v, E=%v", encoded.R, encoded.E)
 			decoded := tt.bob.Decode(encoded)
 			log.Printf("decoded: %v", decoded)
