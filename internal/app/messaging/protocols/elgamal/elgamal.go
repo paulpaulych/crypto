@@ -2,6 +2,7 @@ package elgamal
 
 import (
 	"crypto/rand"
+	"errors"
 	"fmt"
 	dh "github.com/paulpaulych/crypto/internal/app/algorithms/diffie-hellman"
 	"github.com/paulpaulych/crypto/internal/app/algorithms/elgamal-cipher"
@@ -14,11 +15,13 @@ import (
 	. "net"
 )
 
+const bobPubKeyFile = "bob_pub.key"
+
 // TODO increase block size
 const blockSize = 1
 
 func WriteFn(
-	commonPub *dh.CommonPublicKey,
+	commonPub dh.CommonPublicKey,
 	bobPub *Int,
 ) func(msg io.Reader, conn Conn) error {
 	return func(msg io.Reader, conn Conn) error {
@@ -35,7 +38,7 @@ func WriteFn(
 }
 
 func encoder(
-	commonPub *dh.CommonPublicKey,
+	commonPub dh.CommonPublicKey,
 	bobPub *Int,
 	conn Conn,
 ) func([]byte) error {
@@ -63,7 +66,7 @@ func encoder(
 }
 
 func ReadFn(
-	cPub *dh.CommonPublicKey,
+	cPub dh.CommonPublicKey,
 	output func(Addr) nio.ClosableWriter,
 ) func(conn Conn) error {
 	bob := elgamal_cipher.NewBob(cPub)
@@ -102,10 +105,10 @@ func decoder(bob *elgamal_cipher.Bob, conn Conn) func(buf []byte) (int, error) {
 			return 0, fmt.Errorf("can't read E: %v", err)
 		}
 		encoded := &elgamal_cipher.Encoded{E: E, R: R}
-		log.Printf("ELGAMAL: R=%v, E=%v, l=%v", encoded.R, encoded.E, len(buf))
 		decoded := bob.Decode(encoded)
-		log.Printf("ELGAMAL: decoded int=%v", decoded)
-
+		if decoded.BitLen() > blockSize*8 {
+			return 0, errors.New("received value is larger that buffer size. Seems like Alice uses incorrect key")
+		}
 		decoded.FillBytes(buf)
 		log.Printf("ELGAMAL: decoded data=%v", buf)
 		return blockSize, nil
@@ -114,18 +117,18 @@ func decoder(bob *elgamal_cipher.Bob, conn Conn) func(buf []byte) (int, error) {
 
 func fmtElgamalAlice(a *elgamal_cipher.Alice) string {
 	return fmt.Sprintln("Elgamal node(Alice) initialized.\n",
-		fmt.Sprintf("Common public key: P=%v, G=%v\n", a.CommonPub.P, a.CommonPub.G),
+		fmt.Sprintf("Common public key: P=%v, G=%v\n", a.CommonPub.P(), a.CommonPub.G()),
 		fmt.Sprintf("Bob public key: '%v'", a.BobPub),
 	)
 }
 
 func fmtElgamalBob(bob *elgamal_cipher.Bob) string {
-	err := ioutil.WriteFile("key.txt", bob.Pub.Bytes(), 0644)
+	err := ioutil.WriteFile(bobPubKeyFile, bob.Pub.Bytes(), 0644)
 	if err != nil {
 		return "error writing key"
 	}
 	return fmt.Sprintln("Elgamal node(Bob) initialized.\n",
-		fmt.Sprintf("Common public key: P=%v, G=%v\n", bob.CommonPub.P, bob.CommonPub.G),
-		fmt.Sprintf("Node public key: '%v'", bob.Pub),
+		fmt.Sprintf("Common public key: P=%v, G=%v\n", bob.CommonPub.P(), bob.CommonPub.G()),
+		fmt.Sprintf("Node public key: '%v' (saved to %v)", bob.Pub, bobPubKeyFile),
 	)
 }

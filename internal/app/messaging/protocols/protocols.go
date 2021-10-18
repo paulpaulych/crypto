@@ -24,7 +24,7 @@ func ShamirReader(out func(addr Addr) nio.ClosableWriter) msg_core.ConnReader {
 	return msg_core.NewConnReader(Shamir, shamir.ReadFn(out))
 }
 
-func ElgamalWriter(cPub *dh.CommonPublicKey, bobPubFileName string) msg_core.ConnWriter {
+func ElgamalWriter(cPub dh.CommonPublicKey, bobPubFileName string) msg_core.ConnWriter {
 	bytes, err := ioutil.ReadFile(bobPubFileName)
 	if err != nil {
 		panic(err)
@@ -33,6 +33,6 @@ func ElgamalWriter(cPub *dh.CommonPublicKey, bobPubFileName string) msg_core.Con
 	return msg_core.NewConnWriter(Elgamal, elgamal.WriteFn(cPub, bobPub))
 }
 
-func ElgamalReader(cPub *dh.CommonPublicKey, out func(addr Addr) nio.ClosableWriter) msg_core.ConnReader {
+func ElgamalReader(cPub dh.CommonPublicKey, out func(addr Addr) nio.ClosableWriter) msg_core.ConnReader {
 	return msg_core.NewConnReader(Elgamal, elgamal.ReadFn(cPub, out))
 }

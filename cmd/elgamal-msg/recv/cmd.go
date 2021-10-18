@@ -1,6 +1,7 @@
 package recv
 
 import (
+	"fmt"
 	dh "github.com/paulpaulych/crypto/internal/app/algorithms/diffie-hellman"
 	"github.com/paulpaulych/crypto/internal/app/messaging/msg-core"
 	"github.com/paulpaulych/crypto/internal/app/messaging/protocols"
@@ -49,7 +50,12 @@ func (conf *Conf) NewCmd(args []string) (cli.Cmd, cli.CmdConfError) {
 	if !success {
 		return nil, cli.NewCmdConfError("cannot parse G", nil)
 	}
-	commonPub := &dh.CommonPublicKey{P: P, G: G}
+	commonPub, e := dh.NewCommonPublicKey(P, G)
+	if e != nil {
+		return nil, cli.NewCmdConfError(
+			fmt.Sprintf("Diffie-Hellman public key error: %v", e), nil,
+		)
+	}
 
 	outputType := flags.Flags["o"].GetOr("console")
 	output, e := cli.NewOutputFactory(outputType)
@@ -65,7 +71,7 @@ func (conf *Conf) NewCmd(args []string) (cli.Cmd, cli.CmdConfError) {
 
 type Cmd struct {
 	bindAddr  string
-	commonPub *dh.CommonPublicKey
+	commonPub dh.CommonPublicKey
 	output    cli.OutputFactory
 }
 

@@ -1,6 +1,7 @@
 package send
 
 import (
+	"fmt"
 	dh "github.com/paulpaulych/crypto/internal/app/algorithms/diffie-hellman"
 	"github.com/paulpaulych/crypto/internal/app/messaging/msg-core"
 	"github.com/paulpaulych/crypto/internal/app/messaging/protocols"
@@ -55,7 +56,12 @@ func (conf *Conf) NewCmd(args []string) (cli.Cmd, cli.CmdConfError) {
 	if bobPubFName == nil {
 		return nil, cli.NewCmdConfError("required flag: -bob-pub", nil)
 	}
-	commonPub := &dh.CommonPublicKey{P: P, G: G}
+	commonPub, e := dh.NewCommonPublicKey(P, G)
+	if e != nil {
+		return nil, cli.NewCmdConfError(
+			fmt.Sprintf("Diffie-Hellman public key error: %v", e), nil,
+		)
+	}
 	return &Cmd{addr: addr, alice: protocols.ElgamalWriter(commonPub, *bobPubFName), msg: msgReader}, nil
 }
 
