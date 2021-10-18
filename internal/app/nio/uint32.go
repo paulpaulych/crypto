@@ -1,20 +1,20 @@
-package tcp
+package nio
 
 import (
 	"bytes"
 	"encoding/binary"
 	"errors"
-	"net"
+	"io"
 )
 
-func WriteUint32(conn net.Conn, int uint32) error {
+func WriteUint32(writer io.Writer, int uint32) error {
 	buf := new(bytes.Buffer)
 	err := binary.Write(buf, binary.BigEndian, int)
 	if err != nil {
 		return err
 	}
 
-	actuallyWrote, err := conn.Write(buf.Bytes())
+	actuallyWrote, err := writer.Write(buf.Bytes())
 	if err != nil {
 		return err
 	}
@@ -24,9 +24,9 @@ func WriteUint32(conn net.Conn, int uint32) error {
 	return nil
 }
 
-func ReadUint32(conn net.Conn) (uint32, error) {
+func ReadUint32(reader io.Reader) (uint32, error) {
 	lenBuf := make([]byte, 4)
-	actuallyRead, err := conn.Read(lenBuf)
+	actuallyRead, err := reader.Read(lenBuf)
 	if err != nil {
 		return 0, err
 	}

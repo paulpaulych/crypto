@@ -7,7 +7,6 @@ import (
 	"github.com/paulpaulych/crypto/internal/app/algorithms/elgamal-cipher"
 	"github.com/paulpaulych/crypto/internal/app/algorithms/rand"
 	"github.com/paulpaulych/crypto/internal/app/nio"
-	"github.com/paulpaulych/crypto/internal/app/tcp"
 	"io"
 	"io/ioutil"
 	"log"
@@ -15,7 +14,7 @@ import (
 	. "net"
 )
 
-const bobPubKeyFile = "bob_pub.key"
+const bobPubKeyFile = "bob_elgamal.key"
 
 // TODO increase block size
 const blockSize = 1
@@ -50,11 +49,11 @@ func encoder(
 		log.Printf("ELGAMAL: data int: %v", msgInt)
 		encoded := alice.Encode(msgInt, rand.CryptoSafeRandom())
 		log.Printf("ELGAMAL: R=%v, E=%v", encoded.R, encoded.E)
-		err := tcp.WriteBigIntWithLen(conn, encoded.R)
+		err := nio.WriteBigIntWithLen(conn, encoded.R)
 		if err != nil {
 			return fmt.Errorf("writing R failed: %v", err)
 		}
-		err = tcp.WriteBigIntWithLen(conn, encoded.E)
+		err = nio.WriteBigIntWithLen(conn, encoded.E)
 		if err != nil {
 			return fmt.Errorf("writing E failed: %v", err)
 		}
@@ -93,12 +92,12 @@ func ReadFn(
 
 func decoder(bob *elgamal_cipher.Bob, conn Conn) func(buf []byte) (int, error) {
 	return func(buf []byte) (int, error) {
-		R, err := tcp.ReadBigIntWithLen(conn)
+		R, err := nio.ReadBigIntWithLen(conn)
 		if err != nil {
 			return 0, fmt.Errorf("can't read R: %v", err)
 		}
 
-		E, err := tcp.ReadBigIntWithLen(conn)
+		E, err := nio.ReadBigIntWithLen(conn)
 		if err != nil {
 			return 0, fmt.Errorf("can't read E: %v", err)
 		}

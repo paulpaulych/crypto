@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/paulpaulych/crypto/cmd/elgamal-msg"
+	"github.com/paulpaulych/crypto/cmd/rsa-msg"
 	"github.com/paulpaulych/crypto/cmd/shamir-msg"
 	"github.com/paulpaulych/crypto/internal/infra/cli"
 	"os"
@@ -14,6 +15,7 @@ func main() {
 	subConfigs := []cli.CmdConf{
 		&shamir_msg.Conf{},
 		&elgamal_msg.Conf{},
+		&rsa_msg.Conf{},
 	}
 
 	cmd, confErr := cli.InitSubCmd(subConfigs, os.Args[1:])

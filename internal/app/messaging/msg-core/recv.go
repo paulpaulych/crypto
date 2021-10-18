@@ -1,7 +1,7 @@
 package msg_core
 
 import (
-	"github.com/paulpaulych/crypto/internal/app/tcp"
+	"github.com/paulpaulych/crypto/internal/app/nio"
 	"log"
 	. "net"
 )
@@ -10,7 +10,7 @@ func RecvMessage(reader ConnReader) func(Conn) {
 	return func(conn Conn) {
 		defer func() { _ = conn.Close() }()
 
-		protocolCode, err := tcp.ReadUint32(conn)
+		protocolCode, err := nio.ReadUint32(conn)
 		if err != nil {
 			log.Printf("failed to read protocol protocolCode: %s", err)
 			return

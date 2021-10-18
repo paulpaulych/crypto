@@ -3,8 +3,7 @@ package shamir
 import (
 	"fmt"
 	"github.com/paulpaulych/crypto/internal/app/algorithms/shamir-cipher"
-	nio "github.com/paulpaulych/crypto/internal/app/nio"
-	"github.com/paulpaulych/crypto/internal/app/tcp"
+	"github.com/paulpaulych/crypto/internal/app/nio"
 	"io"
 	"log"
 	. "math/big"
@@ -15,7 +14,7 @@ const blockSize = 4
 
 func WriteFn(p *Int) func(msg io.Reader, conn Conn) error {
 	return func(msg io.Reader, conn Conn) error {
-		err := tcp.WriteBigIntWithLen(conn, p)
+		err := nio.WriteBigIntWithLen(conn, p)
 		if err != nil {
 			return fmt.Errorf("writing P failed: %v", err)
 		}
@@ -46,18 +45,18 @@ func encoder(p *Int, conn Conn) func([]byte) error {
 			return fmt.Errorf("writing step1out failed: %v", err)
 		}
 
-		err = tcp.WriteBigIntWithLen(conn, step1out)
+		err = nio.WriteBigIntWithLen(conn, step1out)
 		if err != nil {
 			return fmt.Errorf("writing step1out failed: %v", err)
 		}
 
-		step2out, err := tcp.ReadBigIntWithLen(conn)
+		step2out, err := nio.ReadBigIntWithLen(conn)
 		if err != nil {
 			return fmt.Errorf("reading step2out failed: %v", err)
 		}
 
 		step3out := alice.Step3(step2out)
-		err = tcp.WriteBigIntWithLen(conn, step3out)
+		err = nio.WriteBigIntWithLen(conn, step3out)
 		if err != nil {
 			return fmt.Errorf("writing step3out failed: %v", err)
 		}
@@ -78,7 +77,7 @@ func ReadFn(
 			}
 		}()
 
-		p, err := tcp.ReadBigIntWithLen(conn)
+		p, err := nio.ReadBigIntWithLen(conn)
 		if err != nil {
 			return fmt.Errorf("can't read p: %s", err)
 		}
@@ -103,7 +102,7 @@ func decoder(p *Int, conn Conn) func(buf []byte) (int, error) {
 			return 0, fmt.Errorf("failed to init bob: %d", err)
 		}
 
-		step1out, err := tcp.ReadBigIntWithLen(conn)
+		step1out, err := nio.ReadBigIntWithLen(conn)
 		if err == io.EOF {
 			return 0, io.EOF
 		}
@@ -112,12 +111,12 @@ func decoder(p *Int, conn Conn) func(buf []byte) (int, error) {
 		}
 
 		step2out := bob.Step2(step1out)
-		err = tcp.WriteBigIntWithLen(conn, step2out)
+		err = nio.WriteBigIntWithLen(conn, step2out)
 		if err != nil {
 			return 0, fmt.Errorf("can't write step2out: %v", err)
 		}
 
-		step3out, err := tcp.ReadBigIntWithLen(conn)
+		step3out, err := nio.ReadBigIntWithLen(conn)
 		if err != nil {
 			return 0, fmt.Errorf("can't write step2out: %v", err)
 		}

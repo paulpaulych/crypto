@@ -2,7 +2,7 @@ package msg_core
 
 import (
 	"fmt"
-	"github.com/paulpaulych/crypto/internal/app/tcp"
+	"github.com/paulpaulych/crypto/internal/app/nio"
 	"io"
 	"log"
 	"math/big"
@@ -22,7 +22,7 @@ func SendMsg(addr string, msg io.Reader, alice ConnWriter) error {
 	defer func() { _ = conn.Close() }()
 
 	protocolCode := alice.ProtocolCode()
-	err = tcp.WriteUint32(conn, protocolCode)
+	err = nio.WriteUint32(conn, protocolCode)
 	if err != nil {
 		return fmt.Errorf("failed to write protocol code %v: %v", protocolCode, err)
 	}

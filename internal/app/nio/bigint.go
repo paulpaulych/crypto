@@ -1,21 +1,21 @@
-package tcp
+package nio
 
 import (
 	"fmt"
+	"io"
 	. "math/big"
-	"net"
 )
 
-func WriteBigIntWithLen(conn net.Conn, msg *Int) error {
+func WriteBigIntWithLen(writer io.Writer, msg *Int) error {
 	msgBytes := msg.Bytes()
 
 	msgLen := uint32(len(msgBytes))
-	err := WriteUint32(conn, msgLen)
+	err := WriteUint32(writer, msgLen)
 	if err != nil {
 		return err
 	}
 
-	actuallyWrote, err := conn.Write(msgBytes)
+	actuallyWrote, err := writer.Write(msgBytes)
 	if err != nil {
 		return err
 	}
@@ -25,13 +25,13 @@ func WriteBigIntWithLen(conn net.Conn, msg *Int) error {
 	return nil
 }
 
-func ReadBigIntWithLen(conn net.Conn) (*Int, error) {
-	msgLen, err := ReadUint32(conn)
+func ReadBigIntWithLen(reader io.Reader) (*Int, error) {
+	msgLen, err := ReadUint32(reader)
 	if err != nil {
 		return nil, err
 	}
 	msgBuf := make([]byte, msgLen)
-	actuallyRead, err := conn.Read(msgBuf)
+	actuallyRead, err := reader.Read(msgBuf)
 	if err != nil {
 		return nil, err
 	}
