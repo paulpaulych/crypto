@@ -1,7 +1,8 @@
 package cli
 
 import (
-	. "fmt"
+	"fmt"
+	"io"
 	"strings"
 )
 
@@ -14,12 +15,12 @@ type CmdConf interface {
 	NewCmd(args []string) (Cmd, CmdConfError)
 }
 
-type Usage = string
+type WriteHelp = func(writer io.Writer)
 
 type CmdConfError interface {
-	Error() string
+	Error() error
 	Trace() []string
-	Usage() *Usage
+	HelpWriter() WriteHelp
 }
 
 func InitSubCmd(subConfigs []CmdConf, args []string) (Cmd, CmdConfError) {
@@ -48,8 +49,8 @@ func noSubCmdError(configs []CmdConf) CmdConfError {
 	for i, subConfig := range configs {
 		subNames[i] = subConfig.CmdName()
 	}
-	return NewCmdConfError(
-		Sprintf("one of subcommands required: %v", strings.Join(subNames, ", ")),
+	return NewCmdConfErr(
+		fmt.Errorf("one of subcommands required: %v", strings.Join(subNames, ", ")),
 		nil,
 	)
 }

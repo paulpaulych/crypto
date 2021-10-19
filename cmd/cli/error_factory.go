@@ -1,9 +1,17 @@
 package cli
 
-func NewCmdConfError(msg string, usage *Usage) CmdConfError {
+func NewCmdConfErr(err error, usage WriteHelp) CmdConfError {
 	return &confError{
 		trace: []string{},
-		error: msg,
+		error: err,
+		usage: usage,
+	}
+}
+
+func HelpRequested(usage WriteHelp) CmdConfError {
+	return &confError{
+		trace: []string{},
+		error: nil,
 		usage: usage,
 	}
 }
@@ -12,22 +20,22 @@ func AppendTrace(e CmdConfError, subCmdName string) CmdConfError {
 	return &confError{
 		trace: append([]string{subCmdName}, e.Trace()...),
 		error: e.Error(),
-		usage: e.Usage(),
+		usage: e.HelpWriter(),
 	}
 }
 
 type confError struct {
 	trace []string
-	error string
-	usage *Usage
+	error error
+	usage WriteHelp
 }
 
-func (e *confError) Error() string {
+func (e *confError) Error() error {
 	return e.error
 }
 func (e *confError) Trace() []string {
 	return e.trace
 }
-func (e *confError) Usage() *Usage {
+func (e *confError) HelpWriter() WriteHelp {
 	return e.usage
 }

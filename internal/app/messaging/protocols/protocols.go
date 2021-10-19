@@ -1,6 +1,7 @@
 package protocols
 
 import (
+	"fmt"
 	"github.com/paulpaulych/crypto/internal/app/messaging/msg-core"
 	"github.com/paulpaulych/crypto/internal/app/messaging/protocols/elgamal"
 	"github.com/paulpaulych/crypto/internal/app/messaging/protocols/rsa"
@@ -35,8 +36,12 @@ func ElgamalWriter(cPub dh.CommonPublicKey, bobPubFileName string) msg_core.Conn
 	return msg_core.NewConnWriter(Elgamal, elgamal.WriteFn(cPub, bobPub))
 }
 
-func ElgamalReader(cPub dh.CommonPublicKey, out func(addr Addr) nio.ClosableWriter) msg_core.ConnReader {
-	return msg_core.NewConnReader(Elgamal, elgamal.ReadFn(cPub, out))
+func ElgamalReader(p, g *big.Int, out func(addr Addr) nio.ClosableWriter) (msg_core.ConnReader, error) {
+	commonPub, e := dh.NewCommonPublicKey(p, g)
+	if e != nil {
+		return nil, fmt.Errorf("Diffie-Hellman public key error: %v", e)
+	}
+	return msg_core.NewConnReader(Elgamal, elgamal.ReadFn(commonPub, out)), nil
 }
 
 func RsaWriter(bobPubFileName string) msg_core.ConnWriter {

@@ -15,49 +15,38 @@ func (conf *Conf) CmdName() string {
 }
 
 func (conf *Conf) NewCmd(args []string) (cli.Cmd, cli.CmdConfError) {
-	flagsSpec := cli.NewFlagSpec(conf.CmdName(), map[string]string{
-		"P": "large prime integer",
-		"i": "message input type: file or arg",
-	})
+	var opts struct {
+		P     *cli.BigIntOpt `short:"P" description:"large prime number" required:"true"`
+		Input string         `short:"i" long:"input" choice:"file" choice:"console" description:"input type: console or file" default:"console"`
+		Args  struct {
+			Addr string `positional-arg-name:"target" description:"target host:port. Example: 127.0.0.1:1234"`
+			Msg  string `positional-arg-name:"message" description:"message text or name of file when -i=file specified"`
+		} `positional-args:"true" required:"true"`
+	}
 
-	flags, err := flagsSpec.Parse(args)
+	_, err := cli.ParseFlagsOfCmd(conf.CmdName(), &opts, args)
 	if err != nil {
 		return nil, err
 	}
 
-	if len(flags.Args) < 2 {
-		return nil, cli.NewCmdConfError("args required: [host:port] [message]", nil)
-	}
-
-	addr := flags.Args[0]
-
-	primeStr := flags.Flags["P"].Get()
-	input := flags.Flags["i"].GetOr("console")
-
-	msgReader, e := cli.NewInputReader(input, flags.Args[1:])
+	msgReader, e := cli.NewInputReader(opts.Input, opts.Args.Msg)
 	if e != nil {
-		return nil, cli.NewCmdConfError(e.Error(), nil)
+		return nil, cli.NewCmdConfErr(e, nil)
 	}
 
-	if primeStr == nil || len(*primeStr) == 0 {
-		return nil, cli.NewCmdConfError("shamir protocol requires -prime flag", nil)
-	}
-	prime, success := new(big.Int).SetString(*primeStr, 10)
-	if !success {
-		return nil, cli.NewCmdConfError("cannot parse P", nil)
-	}
-	if err != nil {
-		return nil, err
-	}
-	return &Cmd{addr: addr, alice: protocols.ShamirWriter(prime), msg: msgReader}, nil
+	return &Cmd{
+		addr: opts.Args.Addr,
+		p:    opts.P.Value,
+		msg:  msgReader,
+	}, nil
 }
 
 type Cmd struct {
-	addr  string
-	alice msg_core.ConnWriter
-	msg   io.Reader
+	addr string
+	p    *big.Int
+	msg  io.Reader
 }
 
 func (cmd *Cmd) Run() error {
-	return msg_core.SendMsg(cmd.addr, cmd.msg, cmd.alice)
+	return msg_core.SendMsg(cmd.addr, cmd.msg, protocols.ShamirWriter(cmd.p))
 }

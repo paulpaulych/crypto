@@ -19,7 +19,7 @@ type testCase = struct {
 func TestElgamal(t *testing.T) {
 	commonPubKey, e := NewCommonPublicKey(NewInt(30803), NewInt(2))
 	if e != nil {
-		log.Panicf("failed to initialize test data: %v", e)
+		log.Fatalf("failed to initialize test data: %v", e)
 	}
 
 	tests := []testCase{

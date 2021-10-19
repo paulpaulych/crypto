@@ -60,7 +60,7 @@ func ConditionalRandom(predicate func(*Int) bool, rand Random) Random {
 // CyclicRandom is useful for tests
 func CyclicRandom(values ...*Int) Random {
 	if values == nil || len(values) == 0 {
-		log.Panicf("CyclicRandom: values cannot be empty")
+		log.Fatalf("CyclicRandom: values cannot be empty")
 	}
 
 	i := 0

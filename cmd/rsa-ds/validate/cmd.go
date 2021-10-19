@@ -12,25 +12,18 @@ func (conf *Conf) CmdName() string {
 }
 
 func (conf *Conf) NewCmd(args []string) (cli.Cmd, cli.CmdConfError) {
-	flagsSpec := cli.NewFlagSpec(conf.CmdName(), map[string]string{
-		"pub": "path to file containing public key",
-	})
-
-	flags, err := flagsSpec.Parse(args)
+	var opts struct {
+		PubKeyFile string `short:"p" long:"pub-key-file" description:"path to file containing public key" default:"rsa_pub.key"`
+		Args       struct {
+			SignedFile string `positional-arg-name:"signed-file" description:"path to file containing signed message"`
+		} `positional-args:"true" required:"true"`
+	}
+	_, err := cli.ParseFlagsOfCmd(conf.CmdName(), &opts, args)
 	if err != nil {
 		return nil, err
 	}
 
-	if len(flags.Args) < 1 {
-		return nil, cli.NewCmdConfError("args required: [signed file]", nil)
-	}
-
-	pubFName := flags.Flags["pub"].Get()
-
-	if pubFName == nil {
-		return nil, cli.NewCmdConfError("required flag: -pub", nil)
-	}
-	return &Cmd{signedFile: flags.Args[0], pubKeyFile: *pubFName}, nil
+	return &Cmd{signedFile: opts.Args.SignedFile, pubKeyFile: opts.PubKeyFile}, nil
 }
 
 type Cmd struct {

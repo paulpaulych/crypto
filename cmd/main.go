@@ -21,8 +21,16 @@ func main() {
 	}
 
 	cmd, confErr := cli.InitSubCmd(subConfigs, os.Args[1:])
-	if confErr != nil {
-		printConfError(confErr)
+	if e := confErr; e != nil {
+		if e.Trace() != nil && len(e.Trace()) != 0 {
+			path := strings.Join(e.Trace(), " ")
+			fmt.Printf("%s:\n", path)
+		}
+		if writeHelp := e.HelpWriter(); writeHelp != nil {
+			writeHelp(os.Stdout)
+		} else if err := e.Error(); err != nil {
+			fmt.Printf("ERROR: %s\n", err)
+		}
 		os.Exit(1)
 	}
 
@@ -33,18 +41,4 @@ func main() {
 	}
 
 	os.Exit(0)
-}
-
-func printConfError(e cli.CmdConfError) {
-	if e.Trace() != nil && len(e.Trace()) != 0 {
-		path := strings.Join(e.Trace(), " ")
-		fmt.Printf("%s: %s\n", path, e.Error())
-	} else {
-		fmt.Println(e.Error())
-	}
-
-	if e.Usage() == nil {
-		return
-	}
-	println(*e.Usage())
 }

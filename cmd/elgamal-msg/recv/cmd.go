@@ -1,12 +1,10 @@
 package recv
 
 import (
-	"fmt"
 	"github.com/paulpaulych/crypto/cmd/cli"
 	"github.com/paulpaulych/crypto/internal/app/messaging/msg-core"
 	"github.com/paulpaulych/crypto/internal/app/messaging/protocols"
 	"github.com/paulpaulych/crypto/internal/app/tcp"
-	dh "github.com/paulpaulych/crypto/internal/core/diffie-hellman"
 	"math/big"
 	"net"
 )
@@ -17,68 +15,42 @@ func (conf *Conf) CmdName() string {
 	return "recv"
 }
 func (conf *Conf) NewCmd(args []string) (cli.Cmd, cli.CmdConfError) {
-	flagsSpec := cli.NewFlagSpec(conf.CmdName(), map[string]string{
-		"host": "host to bind",
-		"port": "port to bind",
-		"P":    "large prime number",
-		"G":    "generator of multiplicative group of integers modulo P",
-		"o":    "output type: file or console",
-	})
-
-	flags, err := flagsSpec.Parse(args)
-	if err != nil {
+	var opts struct {
+		Host   string         `short:"h" long:"host" description:"host to bind" default:"localhost"`
+		Port   string         `short:"p" long:"port" description:"port to bind" default:"12345"`
+		P      *cli.BigIntOpt `short:"P" description:"large prime number" required:"true"`
+		G      *cli.BigIntOpt `short:"G" description:"generator of multiplicative group of integers modulo P" required:"true"`
+		Output string         `short:"o" long:"output" choice:"file" choice:"console" description:"output type: console or file" default:"console"`
+	}
+	if _, err := cli.ParseFlagsOfCmd(conf.CmdName(), &opts, args); err != nil {
 		return nil, err
 	}
 
-	host := flags.Flags["host"].GetOr("localhost")
-	port := flags.Flags["port"].GetOr("4444")
-	addr := net.JoinHostPort(host, port)
-
-	pStr := flags.Flags["P"].Get()
-	gStr := flags.Flags["G"].Get()
-	if pStr == nil {
-		return nil, cli.NewCmdConfError("flag required: -P", nil)
-	}
-	if gStr == nil {
-		return nil, cli.NewCmdConfError("flag required: -G", nil)
-	}
-	P, success := new(big.Int).SetString(*pStr, 10)
-	if !success {
-		return nil, cli.NewCmdConfError("cannot parse P", nil)
-	}
-	G, success := new(big.Int).SetString(*gStr, 10)
-	if !success {
-		return nil, cli.NewCmdConfError("cannot parse G", nil)
-	}
-	commonPub, e := dh.NewCommonPublicKey(P, G)
+	output, e := cli.NewOutputFactory(opts.Output)
 	if e != nil {
-		return nil, cli.NewCmdConfError(
-			fmt.Sprintf("Diffie-Hellman public key error: %v", e), nil,
-		)
+		return nil, cli.NewCmdConfErr(e, nil)
 	}
 
-	outputType := flags.Flags["o"].GetOr("console")
-	output, e := cli.NewOutputFactory(outputType)
-	if e != nil {
-		return nil, cli.NewCmdConfError(e.Error(), nil)
-	}
-
-	if err != nil {
-		return nil, err
-	}
-	return &Cmd{bindAddr: addr, output: output, commonPub: commonPub}, nil
+	return &Cmd{
+		bindAddr: net.JoinHostPort(opts.Host, opts.Port),
+		output:   output,
+		p:        opts.P.Value,
+		g:        opts.G.Value,
+	}, nil
 }
 
 type Cmd struct {
-	bindAddr  string
-	commonPub dh.CommonPublicKey
-	output    cli.OutputFactory
+	bindAddr string
+	p, g     *big.Int
+	output   cli.OutputFactory
 }
 
 func (cmd *Cmd) Run() error {
+	reader, err := protocols.ElgamalReader(cmd.p, cmd.g, cmd.output)
+	if err != nil {
+		return err
+	}
 	return tcp.StartServer(cmd.bindAddr,
-		msg_core.RecvMessage(
-			protocols.ElgamalReader(cmd.commonPub, cmd.output),
-		),
+		msg_core.RecvMessage(reader),
 	)
 }

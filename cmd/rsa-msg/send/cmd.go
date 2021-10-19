@@ -14,34 +14,29 @@ func (conf *Conf) CmdName() string {
 }
 
 func (conf *Conf) NewCmd(args []string) (cli.Cmd, cli.CmdConfError) {
-	flagsSpec := cli.NewFlagSpec(conf.CmdName(), map[string]string{
-		"bob-pub": "path to file containing destination public key",
-		"i":       "message input type: file or arg",
-	})
-
-	flags, err := flagsSpec.Parse(args)
+	var opts struct {
+		BobPub string `short:"b" long:"bob-pub" description:"path to file containing destination public key" required:"true"`
+		Input  string `short:"i" long:"input" choice:"file" choice:"console" description:"input type: console or file" default:"console"`
+		Args   struct {
+			Addr string `positional-arg-name:"target address" description:"target host:port. Example: 127.0.0.1:1234"`
+			Msg  string `positional-arg-name:"message" description:"message text or name of file when -i=file specified"`
+		} `positional-args:"true" required:"true"`
+	}
+	_, err := cli.ParseFlagsOfCmd(conf.CmdName(), &opts, args)
 	if err != nil {
 		return nil, err
 	}
 
-	if len(flags.Args) < 2 {
-		return nil, cli.NewCmdConfError("args required: [host:port] [message]", nil)
-	}
-
-	addr := flags.Args[0]
-
-	bobPubFName := flags.Flags["bob-pub"].Get()
-	input := flags.Flags["i"].GetOr("console")
-
-	msgReader, e := cli.NewInputReader(input, flags.Args[1:])
+	msgReader, e := cli.NewInputReader(opts.Input, opts.Args.Msg)
 	if e != nil {
-		return nil, cli.NewCmdConfError(e.Error(), nil)
+		return nil, cli.NewCmdConfErr(e, nil)
 	}
 
-	if bobPubFName == nil {
-		return nil, cli.NewCmdConfError("required flag: -bob-pub", nil)
-	}
-	return &Cmd{addr: addr, writer: protocols.RsaWriter(*bobPubFName), msg: msgReader}, nil
+	return &Cmd{
+		addr:   opts.Args.Addr,
+		writer: protocols.RsaWriter(opts.BobPub),
+		msg:    msgReader,
+	}, nil
 }
 
 type Cmd struct {

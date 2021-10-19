@@ -6,6 +6,7 @@ import (
 	"github.com/paulpaulych/crypto/internal/core/shamir-cipher"
 	"io"
 	"log"
+	"math"
 	. "math/big"
 	. "net"
 )
@@ -13,6 +14,9 @@ import (
 const blockSize = 4
 
 func WriteFn(p *Int) func(msg io.Reader, conn Conn) error {
+	if p.Cmp(NewInt(math.MaxUint32)) <= 0 {
+		log.Fatalf("P cannot be less than %v", math.MaxUint32)
+	}
 	return func(msg io.Reader, conn Conn) error {
 		err := nio.WriteBigIntWithLen(conn, p)
 		if err != nil {
@@ -120,7 +124,9 @@ func decoder(p *Int, conn Conn) func(buf []byte) (int, error) {
 		if err != nil {
 			return 0, fmt.Errorf("can't write step2out: %v", err)
 		}
+		//TODO: стреляет - исправить
 		bob.Decode(step3out).FillBytes(buf)
+
 		return blockSize, nil
 	}
 }

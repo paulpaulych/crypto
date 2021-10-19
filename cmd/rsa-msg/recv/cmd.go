@@ -15,49 +15,33 @@ func (conf *Conf) CmdName() string {
 	return "recv"
 }
 func (conf *Conf) NewCmd(args []string) (cli.Cmd, cli.CmdConfError) {
-	flagsSpec := cli.NewFlagSpec(conf.CmdName(), map[string]string{
-		"host": "host to bind",
-		"port": "port to bind",
-		"P":    "large prime number",
-		"Q":    "large prime number",
-		"o":    "output type: file or console",
-	})
+	var opts struct {
+		Host   string         `short:"h" long:"host" description:"host to bind" default:"localhost"`
+		Port   string         `short:"p" long:"port" description:"port to bind" default:"12345"`
+		P      *cli.BigIntOpt `short:"P" description:"large prime number"`
+		G      *cli.BigIntOpt `short:"G" description:"large prime number"`
+		Output string         `short:"o" long:"output" choice:"file" choice:"console" description:"output type: console or file" default:"console"`
+	}
 
-	flags, err := flagsSpec.Parse(args)
+	_, err := cli.ParseFlagsOfCmd(conf.CmdName(), &opts, args)
 	if err != nil {
 		return nil, err
 	}
 
-	host := flags.Flags["host"].GetOr("localhost")
-	port := flags.Flags["port"].GetOr("4444")
-	addr := net.JoinHostPort(host, port)
-
-	pStr := flags.Flags["P"].Get()
-	qStr := flags.Flags["Q"].Get()
-	if pStr == nil {
-		return nil, cli.NewCmdConfError("flag required: -P", nil)
-	}
-	if qStr == nil {
-		return nil, cli.NewCmdConfError("flag required: -Q", nil)
-	}
-	P, success := new(big.Int).SetString(*pStr, 10)
-	if !success {
-		return nil, cli.NewCmdConfError("cannot parse P", nil)
-	}
-	Q, success := new(big.Int).SetString(*qStr, 10)
-	if !success {
-		return nil, cli.NewCmdConfError("cannot parse Q", nil)
-	}
-	outputType := flags.Flags["o"].GetOr("console")
-	output, e := cli.NewOutputFactory(outputType)
+	output, e := cli.NewOutputFactory(opts.Output)
 	if e != nil {
-		return nil, cli.NewCmdConfError(e.Error(), nil)
+		return nil, cli.NewCmdConfErr(e, nil)
 	}
 
 	if err != nil {
 		return nil, err
 	}
-	return &Cmd{bindAddr: addr, output: output, p: P, q: Q}, nil
+	return &Cmd{
+		bindAddr: net.JoinHostPort(opts.Host, opts.Port),
+		output:   output,
+		p:        opts.P.Value,
+		q:        opts.G.Value,
+	}, nil
 }
 
 type Cmd struct {

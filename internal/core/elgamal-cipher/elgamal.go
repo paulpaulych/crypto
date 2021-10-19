@@ -47,7 +47,7 @@ func NewBob(commonPub dh.CommonPublicKey) *Bob {
 	maxSecret := new(Int).Sub(commonPub.P(), NewInt(1))
 	secret, err := FromToRandom(NewInt(0), maxSecret, CryptoSafeRandom())()
 	if err != nil {
-		log.Panicf("NewBob: error generating random int: %v", err)
+		log.Fatalf("NewBob: error generating random int: %v", err)
 	}
 	pub := PowByMod(commonPub.G(), secret, commonPub.P())
 	return &Bob{

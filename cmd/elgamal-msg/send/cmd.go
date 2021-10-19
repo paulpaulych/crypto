@@ -17,60 +17,47 @@ func (conf *Conf) CmdName() string {
 }
 
 func (conf *Conf) NewCmd(args []string) (cli.Cmd, cli.CmdConfError) {
-	flagsSpec := cli.NewFlagSpec(conf.CmdName(), map[string]string{
-		"P":       "large prime number",
-		"G":       "generator of multiplicative group of integers modulo P",
-		"bob-pub": "path to file containing destination public key",
-		"i":       "message input type: file or arg",
-	})
+	var opts struct {
+		P          *cli.BigIntOpt `short:"P" description:"large prime number" required:"true"`
+		G          *cli.BigIntOpt `short:"G" description:"generator of multiplicative group of integers modulo P" required:"true"`
+		BobPubFile string         `short:"b" long:"bob-pub" description:"path to file containing destination public key" required:"true"`
+		Input      string         `short:"i" long:"input" choice:"file" choice:"console" description:"input type: console or file" default:"console"`
+		Args       struct {
+			Addr string `positional-arg-name:"target" description:"target host:port. Example: 127.0.0.1:1234"`
+			Msg  string `positional-arg-name:"message" description:"message text or name of file when -i=file specified"`
+		} `positional-args:"true" required:"true"`
+	}
 
-	flags, err := flagsSpec.Parse(args)
+	_, err := cli.ParseFlagsOfCmd(conf.CmdName(), &opts, args)
 	if err != nil {
 		return nil, err
 	}
 
-	if len(flags.Args) < 2 {
-		return nil, cli.NewCmdConfError("args required: [host:port] [message]", nil)
-	}
-
-	addr := flags.Args[0]
-
-	bobPubFName := flags.Flags["bob-pub"].Get()
-	input := flags.Flags["i"].GetOr("console")
-
-	msgReader, e := cli.NewInputReader(input, flags.Args[1:])
+	msgReader, e := cli.NewInputReader(opts.Input, opts.Args.Msg)
 	if e != nil {
-		return nil, cli.NewCmdConfError(e.Error(), nil)
+		return nil, cli.NewCmdConfErr(e, nil)
 	}
 
-	pStr := flags.Flags["P"].Get()
-	gStr := flags.Flags["G"].Get()
-	P, success := new(big.Int).SetString(*pStr, 10)
-	if !success {
-		return nil, cli.NewCmdConfError("cannot parse P", nil)
-	}
-	G, success := new(big.Int).SetString(*gStr, 10)
-	if !success {
-		return nil, cli.NewCmdConfError("cannot parse G", nil)
-	}
-	if bobPubFName == nil {
-		return nil, cli.NewCmdConfError("required flag: -bob-pub", nil)
-	}
-	commonPub, e := dh.NewCommonPublicKey(P, G)
-	if e != nil {
-		return nil, cli.NewCmdConfError(
-			fmt.Sprintf("Diffie-Hellman public key error: %v", e), nil,
-		)
-	}
-	return &Cmd{addr: addr, alice: protocols.ElgamalWriter(commonPub, *bobPubFName), msg: msgReader}, nil
+	return &Cmd{
+		addr:       opts.Args.Addr,
+		p:          opts.P.Value,
+		g:          opts.G.Value,
+		bobPubFile: opts.BobPubFile,
+		msg:        msgReader,
+	}, nil
 }
 
 type Cmd struct {
-	addr  string
-	alice msg_core.ConnWriter
-	msg   io.Reader
+	addr       string
+	p, g       *big.Int
+	bobPubFile string
+	msg        io.Reader
 }
 
 func (cmd *Cmd) Run() error {
-	return msg_core.SendMsg(cmd.addr, cmd.msg, cmd.alice)
+	commonPub, e := dh.NewCommonPublicKey(cmd.p, cmd.g)
+	if e != nil {
+		return fmt.Errorf("Diffie-Hellman public key error: %v", e)
+	}
+	return msg_core.SendMsg(cmd.addr, cmd.msg, protocols.ElgamalWriter(commonPub, cmd.bobPubFile))
 }

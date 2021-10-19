@@ -14,31 +14,26 @@ func (conf *Conf) CmdName() string {
 	return "recv"
 }
 func (conf *Conf) NewCmd(args []string) (cli.Cmd, cli.CmdConfError) {
-	flagsSpec := cli.NewFlagSpec(conf.CmdName(), map[string]string{
-		"host": "host to bind",
-		"port": "port to bind",
-		"o":    "output type: file or console",
-	})
+	var opts struct {
+		Host   string `short:"h" long:"host" description:"host to bind" default:"localhost"`
+		Port   string `short:"p" long:"port" description:"port to bind" default:"12345"`
+		Output string `short:"o" long:"output" choice:"file" choice:"console" description:"output type: console or file" default:"console"`
+	}
 
-	flags, err := flagsSpec.Parse(args)
+	_, err := cli.ParseFlagsOfCmd(conf.CmdName(), &opts, args)
 	if err != nil {
 		return nil, err
 	}
 
-	host := flags.Flags["host"].GetOr("localhost")
-	port := flags.Flags["port"].GetOr("4444")
-	addr := net.JoinHostPort(host, port)
-
-	outputType := flags.Flags["o"].GetOr("console")
-	output, e := cli.NewOutputFactory(outputType)
+	output, e := cli.NewOutputFactory(opts.Output)
 	if e != nil {
-		return nil, cli.NewCmdConfError(e.Error(), nil)
+		return nil, cli.NewCmdConfErr(e, nil)
 	}
 
-	if err != nil {
-		return nil, err
-	}
-	return &Cmd{bindAddr: addr, output: output}, nil
+	return &Cmd{
+		bindAddr: net.JoinHostPort(opts.Host, opts.Port),
+		output:   output,
+	}, nil
 }
 
 type Cmd struct {

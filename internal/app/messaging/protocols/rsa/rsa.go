@@ -64,7 +64,7 @@ func ReadFn(
 ) func(conn Conn) error {
 	bob, err := rsa_cipher.NewBob(p, g, rand.CryptoSafeRandom())
 	if err != nil {
-		log.Panicf("bob init failed: %v", err)
+		log.Fatalf("bob init failed: %v", err)
 	}
 	fmt.Println(fmtBob(bob))
 	return func(conn Conn) error {
@@ -117,7 +117,7 @@ func fmtBob(bob *rsa_cipher.Bob) string {
 	defer func() { _ = file.Close() }()
 	err := writeBobKey(bob.BobPub, file)
 	if err != nil {
-		log.Panicf("failed to save key to file: %v", err)
+		log.Fatalf("failed to save key to file: %v", err)
 	}
 	return fmt.Sprintln("Shamir node(Bob) initialized.\n",
 		fmt.Sprintf("Public key: N=%v, d=%v\n", bob.BobPub.N, bob.BobPub.D),

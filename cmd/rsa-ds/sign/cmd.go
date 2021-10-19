@@ -2,7 +2,7 @@ package sign
 
 import (
 	"github.com/paulpaulych/crypto/cmd/cli"
-	"github.com/paulpaulych/crypto/internal/app/digital-sign"
+	digital_sign "github.com/paulpaulych/crypto/internal/app/digital-sign"
 	"io"
 )
 
@@ -13,32 +13,25 @@ func (conf *Conf) CmdName() string {
 }
 
 func (conf *Conf) NewCmd(args []string) (cli.Cmd, cli.CmdConfError) {
-	flagsSpec := cli.NewFlagSpec(conf.CmdName(), map[string]string{
-		"secret": "path to file containing secret key",
-		"i":      "message input type: file or arg",
-	})
+	var opts struct {
+		SecretFile string `long:"secret" description:"path to file containing secret key" default:"rsa.key"`
+		Input      string `short:"i" long:"input" choice:"file" choice:"console" description:"input type: console or file" default:"console"`
+		Args       struct {
+			Msg string `positional-arg-name:"message" description:"message text or name of file when -i=file specified"`
+		} `positional-args:"true" required:"true"`
+	}
 
-	flags, err := flagsSpec.Parse(args)
+	_, err := cli.ParseFlagsOfCmd(conf.CmdName(), &opts, args)
 	if err != nil {
 		return nil, err
 	}
 
-	if len(flags.Args) < 1 {
-		return nil, cli.NewCmdConfError("args required: [message]", nil)
-	}
-
-	secretFName := flags.Flags["secret"].Get()
-	input := flags.Flags["i"].GetOr("console")
-
-	msgReader, e := cli.NewInputReader(input, flags.Args)
+	msgReader, e := cli.NewInputReader(opts.Input, opts.Args.Msg)
 	if e != nil {
-		return nil, cli.NewCmdConfError(e.Error(), nil)
+		return nil, cli.NewCmdConfErr(e, nil)
 	}
 
-	if secretFName == nil {
-		return nil, cli.NewCmdConfError("required flag: -secret", nil)
-	}
-	return &Cmd{msg: msgReader, secretFile: *secretFName}, nil
+	return &Cmd{msg: msgReader, secretFile: opts.SecretFile}, nil
 }
 
 type Cmd struct {

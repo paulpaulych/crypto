@@ -17,7 +17,7 @@ type testCase = struct {
 func TestRsa(t *testing.T) {
 	bob1, err := NewBob(NewInt(11), NewInt(13), rand.ConstRand(NewInt(5)))
 	if err != nil {
-		log.Panicf("cant init test data: %s", err)
+		log.Fatalf("cant init test data: %s", err)
 	}
 	tests := []testCase{
 		{

@@ -7,12 +7,12 @@ import (
 	"strings"
 )
 
-func NewInputReader(inputType string, args []string) (io.Reader, error) {
+func NewInputReader(inputType string, msg string) (io.Reader, error) {
 	switch inputType {
 	case "console":
-		return strings.NewReader(strings.Join(args, " ")), nil
+		return strings.NewReader(msg), nil
 	case "file":
-		fileName := args[0]
+		fileName := msg
 		f, err := os.Open(fileName)
 		if err != nil {
 			return nil, err
