@@ -1,12 +1,9 @@
 package sign
 
 import (
-	cli2 "github.com/paulpaulych/crypto/cmd/cli"
-	"github.com/paulpaulych/crypto/internal/app/messaging/msg-core"
-	"github.com/paulpaulych/crypto/internal/app/messaging/protocols"
-	"github.com/paulpaulych/crypto/internal/app/tcp"
-	"math/big"
-	"net"
+	"github.com/paulpaulych/crypto/cmd/cli"
+	"github.com/paulpaulych/crypto/internal/app/digital-sign"
+	"io"
 )
 
 type Conf struct{}
@@ -14,9 +11,11 @@ type Conf struct{}
 func (conf *Conf) CmdName() string {
 	return "sign"
 }
-func (conf *Conf) NewCmd(args []string) (cli2.Cmd, cli2.CmdConfError) {
-	flagsSpec := cli2.NewFlagSpec(conf.CmdName(), map[string]string{
-		"msg": "message",
+
+func (conf *Conf) NewCmd(args []string) (cli.Cmd, cli.CmdConfError) {
+	flagsSpec := cli.NewFlagSpec(conf.CmdName(), map[string]string{
+		"secret": "path to file containing secret key",
+		"i":      "message input type: file or arg",
 	})
 
 	flags, err := flagsSpec.Parse(args)
@@ -24,48 +23,29 @@ func (conf *Conf) NewCmd(args []string) (cli2.Cmd, cli2.CmdConfError) {
 		return nil, err
 	}
 
-	host := flags.Flags["host"].GetOr("localhost")
-	port := flags.Flags["port"].GetOr("4444")
-	addr := net.JoinHostPort(host, port)
+	if len(flags.Args) < 1 {
+		return nil, cli.NewCmdConfError("args required: [message]", nil)
+	}
 
-	pStr := flags.Flags["P"].Get()
-	qStr := flags.Flags["Q"].Get()
-	if pStr == nil {
-		return nil, cli2.NewCmdConfError("flag required: -P", nil)
-	}
-	if qStr == nil {
-		return nil, cli2.NewCmdConfError("flag required: -Q", nil)
-	}
-	P, success := new(big.Int).SetString(*pStr, 10)
-	if !success {
-		return nil, cli2.NewCmdConfError("cannot parse P", nil)
-	}
-	Q, success := new(big.Int).SetString(*qStr, 10)
-	if !success {
-		return nil, cli2.NewCmdConfError("cannot parse Q", nil)
-	}
-	outputType := flags.Flags["o"].GetOr("console")
-	output, e := cli2.NewOutputFactory(outputType)
+	secretFName := flags.Flags["secret"].Get()
+	input := flags.Flags["i"].GetOr("console")
+
+	msgReader, e := cli.NewInputReader(input, flags.Args)
 	if e != nil {
-		return nil, cli2.NewCmdConfError(e.Error(), nil)
+		return nil, cli.NewCmdConfError(e.Error(), nil)
 	}
 
-	if err != nil {
-		return nil, err
+	if secretFName == nil {
+		return nil, cli.NewCmdConfError("required flag: -secret", nil)
 	}
-	return &Cmd{bindAddr: addr, output: output, p: P, q: Q}, nil
+	return &Cmd{msg: msgReader, secretFile: *secretFName}, nil
 }
 
 type Cmd struct {
-	bindAddr string
-	p, q     *big.Int
-	output   cli2.OutputFactory
+	secretFile string
+	msg        io.Reader
 }
 
 func (cmd *Cmd) Run() error {
-	return tcp.StartServer(cmd.bindAddr,
-		msg_core.RecvMessage(
-			protocols.RsaReader(cmd.p, cmd.q, cmd.output),
-		),
-	)
+	return digital_sign.Sign(cmd.msg, cmd.secretFile)
 }

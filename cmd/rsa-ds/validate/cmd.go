@@ -1,10 +1,8 @@
 package validate
 
 import (
-	cli2 "github.com/paulpaulych/crypto/cmd/cli"
-	"github.com/paulpaulych/crypto/internal/app/messaging/msg-core"
-	"github.com/paulpaulych/crypto/internal/app/messaging/protocols"
-	"io"
+	"github.com/paulpaulych/crypto/cmd/cli"
+	digital_sign "github.com/paulpaulych/crypto/internal/app/digital-sign"
 )
 
 type Conf struct{}
@@ -13,10 +11,9 @@ func (conf *Conf) CmdName() string {
 	return "validate"
 }
 
-func (conf *Conf) NewCmd(args []string) (cli2.Cmd, cli2.CmdConfError) {
-	flagsSpec := cli2.NewFlagSpec(conf.CmdName(), map[string]string{
-		"bob-pub": "path to file containing destination public key",
-		"i":       "message input type: file or arg",
+func (conf *Conf) NewCmd(args []string) (cli.Cmd, cli.CmdConfError) {
+	flagsSpec := cli.NewFlagSpec(conf.CmdName(), map[string]string{
+		"pub": "path to file containing public key",
 	})
 
 	flags, err := flagsSpec.Parse(args)
@@ -24,32 +21,23 @@ func (conf *Conf) NewCmd(args []string) (cli2.Cmd, cli2.CmdConfError) {
 		return nil, err
 	}
 
-	if len(flags.Args) < 2 {
-		return nil, cli2.NewCmdConfError("args required: [host:port] [message]", nil)
+	if len(flags.Args) < 1 {
+		return nil, cli.NewCmdConfError("args required: [signed file]", nil)
 	}
 
-	addr := flags.Args[0]
+	pubFName := flags.Flags["pub"].Get()
 
-	bobPubFName := flags.Flags["bob-pub"].Get()
-	input := flags.Flags["i"].GetOr("console")
-
-	msgReader, e := cli2.NewInputReader(input, flags.Args[1:])
-	if e != nil {
-		return nil, cli2.NewCmdConfError(e.Error(), nil)
+	if pubFName == nil {
+		return nil, cli.NewCmdConfError("required flag: -pub", nil)
 	}
-
-	if bobPubFName == nil {
-		return nil, cli2.NewCmdConfError("required flag: -bob-pub", nil)
-	}
-	return &Cmd{addr: addr, writer: protocols.RsaWriter(*bobPubFName), msg: msgReader}, nil
+	return &Cmd{signedFile: flags.Args[0], pubKeyFile: *pubFName}, nil
 }
 
 type Cmd struct {
-	addr   string
-	writer msg_core.ConnWriter
-	msg    io.Reader
+	signedFile string
+	pubKeyFile string
 }
 
 func (cmd *Cmd) Run() error {
-	return msg_core.SendMsg(cmd.addr, cmd.msg, cmd.writer)
+	return digital_sign.Validate(cmd.signedFile, cmd.pubKeyFile)
 }

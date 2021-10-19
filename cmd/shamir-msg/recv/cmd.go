@@ -1,7 +1,7 @@
 package recv
 
 import (
-	cli2 "github.com/paulpaulych/crypto/cmd/cli"
+	"github.com/paulpaulych/crypto/cmd/cli"
 	"github.com/paulpaulych/crypto/internal/app/messaging/msg-core"
 	"github.com/paulpaulych/crypto/internal/app/messaging/protocols"
 	"github.com/paulpaulych/crypto/internal/app/tcp"
@@ -13,8 +13,8 @@ type Conf struct{}
 func (conf *Conf) CmdName() string {
 	return "recv"
 }
-func (conf *Conf) NewCmd(args []string) (cli2.Cmd, cli2.CmdConfError) {
-	flagsSpec := cli2.NewFlagSpec(conf.CmdName(), map[string]string{
+func (conf *Conf) NewCmd(args []string) (cli.Cmd, cli.CmdConfError) {
+	flagsSpec := cli.NewFlagSpec(conf.CmdName(), map[string]string{
 		"host": "host to bind",
 		"port": "port to bind",
 		"o":    "output type: file or console",
@@ -30,9 +30,9 @@ func (conf *Conf) NewCmd(args []string) (cli2.Cmd, cli2.CmdConfError) {
 	addr := net.JoinHostPort(host, port)
 
 	outputType := flags.Flags["o"].GetOr("console")
-	output, e := cli2.NewOutputFactory(outputType)
+	output, e := cli.NewOutputFactory(outputType)
 	if e != nil {
-		return nil, cli2.NewCmdConfError(e.Error(), nil)
+		return nil, cli.NewCmdConfError(e.Error(), nil)
 	}
 
 	if err != nil {
@@ -43,7 +43,7 @@ func (conf *Conf) NewCmd(args []string) (cli2.Cmd, cli2.CmdConfError) {
 
 type Cmd struct {
 	bindAddr string
-	output   cli2.OutputFactory
+	output   cli.OutputFactory
 }
 
 func (cmd *Cmd) Run() error {

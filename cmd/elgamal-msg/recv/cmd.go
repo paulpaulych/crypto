@@ -2,7 +2,7 @@ package recv
 
 import (
 	"fmt"
-	cli2 "github.com/paulpaulych/crypto/cmd/cli"
+	"github.com/paulpaulych/crypto/cmd/cli"
 	"github.com/paulpaulych/crypto/internal/app/messaging/msg-core"
 	"github.com/paulpaulych/crypto/internal/app/messaging/protocols"
 	"github.com/paulpaulych/crypto/internal/app/tcp"
@@ -16,8 +16,8 @@ type Conf struct{}
 func (conf *Conf) CmdName() string {
 	return "recv"
 }
-func (conf *Conf) NewCmd(args []string) (cli2.Cmd, cli2.CmdConfError) {
-	flagsSpec := cli2.NewFlagSpec(conf.CmdName(), map[string]string{
+func (conf *Conf) NewCmd(args []string) (cli.Cmd, cli.CmdConfError) {
+	flagsSpec := cli.NewFlagSpec(conf.CmdName(), map[string]string{
 		"host": "host to bind",
 		"port": "port to bind",
 		"P":    "large prime number",
@@ -37,30 +37,30 @@ func (conf *Conf) NewCmd(args []string) (cli2.Cmd, cli2.CmdConfError) {
 	pStr := flags.Flags["P"].Get()
 	gStr := flags.Flags["G"].Get()
 	if pStr == nil {
-		return nil, cli2.NewCmdConfError("flag required: -P", nil)
+		return nil, cli.NewCmdConfError("flag required: -P", nil)
 	}
 	if gStr == nil {
-		return nil, cli2.NewCmdConfError("flag required: -G", nil)
+		return nil, cli.NewCmdConfError("flag required: -G", nil)
 	}
 	P, success := new(big.Int).SetString(*pStr, 10)
 	if !success {
-		return nil, cli2.NewCmdConfError("cannot parse P", nil)
+		return nil, cli.NewCmdConfError("cannot parse P", nil)
 	}
 	G, success := new(big.Int).SetString(*gStr, 10)
 	if !success {
-		return nil, cli2.NewCmdConfError("cannot parse G", nil)
+		return nil, cli.NewCmdConfError("cannot parse G", nil)
 	}
 	commonPub, e := dh.NewCommonPublicKey(P, G)
 	if e != nil {
-		return nil, cli2.NewCmdConfError(
+		return nil, cli.NewCmdConfError(
 			fmt.Sprintf("Diffie-Hellman public key error: %v", e), nil,
 		)
 	}
 
 	outputType := flags.Flags["o"].GetOr("console")
-	output, e := cli2.NewOutputFactory(outputType)
+	output, e := cli.NewOutputFactory(outputType)
 	if e != nil {
-		return nil, cli2.NewCmdConfError(e.Error(), nil)
+		return nil, cli.NewCmdConfError(e.Error(), nil)
 	}
 
 	if err != nil {
@@ -72,7 +72,7 @@ func (conf *Conf) NewCmd(args []string) (cli2.Cmd, cli2.CmdConfError) {
 type Cmd struct {
 	bindAddr  string
 	commonPub dh.CommonPublicKey
-	output    cli2.OutputFactory
+	output    cli.OutputFactory
 }
 
 func (cmd *Cmd) Run() error {
