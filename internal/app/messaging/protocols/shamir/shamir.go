@@ -2,8 +2,8 @@ package shamir
 
 import (
 	"fmt"
-	"github.com/paulpaulych/crypto/internal/app/algorithms/shamir-cipher"
 	"github.com/paulpaulych/crypto/internal/app/nio"
+	"github.com/paulpaulych/crypto/internal/core/shamir-cipher"
 	"io"
 	"log"
 	. "math/big"

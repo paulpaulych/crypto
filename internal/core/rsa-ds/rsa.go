@@ -2,8 +2,8 @@ package rsa_ds
 
 import (
 	"fmt"
-	"github.com/paulpaulych/crypto/internal/app/algorithms/arythmetics"
-	"github.com/paulpaulych/crypto/internal/app/algorithms/rand"
+	"github.com/paulpaulych/crypto/internal/core/arythmetics"
+	"github.com/paulpaulych/crypto/internal/core/rand"
 	. "math/big"
 )
 
@@ -12,7 +12,7 @@ type PubKey struct {
 	Exp *Int
 }
 
-type SecKey struct {
+type SecretKey struct {
 	N   *Int
 	Exp *Int
 }
@@ -22,7 +22,7 @@ type Signed struct {
 	Signature *Int
 }
 
-func GenKeys(p, q *Int, random rand.Random) (*PubKey, *SecKey, error) {
+func GenKeys(p, q *Int, random rand.Random) (*PubKey, *SecretKey, error) {
 	N := new(Int).Mul(p, q)
 	fi := new(Int).Mul(
 		new(Int).Sub(p, NewInt(1)),
@@ -33,10 +33,10 @@ func GenKeys(p, q *Int, random rand.Random) (*PubKey, *SecKey, error) {
 		return nil, nil, err
 	}
 
-	return &PubKey{N: N, Exp: d}, &SecKey{Exp: c}, nil
+	return &PubKey{N: N, Exp: d}, &SecretKey{Exp: c, N: N}, nil
 }
 
-func Sign(key *SecKey, msg *Int, hashFn HashFn) (*Signed, error) {
+func Sign(key *SecretKey, msg *Int, hashFn HashFn) (*Signed, error) {
 	hash, err := hashFn(msg)
 	if err != nil {
 		return nil, fmt.Errorf("can't stupidHash: %v", err)

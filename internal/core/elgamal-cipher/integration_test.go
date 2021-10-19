@@ -2,8 +2,8 @@ package elgamal_cipher
 
 import (
 	"fmt"
-	. "github.com/paulpaulych/crypto/internal/app/algorithms/diffie-hellman"
-	"github.com/paulpaulych/crypto/internal/app/algorithms/rand"
+	. "github.com/paulpaulych/crypto/internal/core/diffie-hellman"
+	"github.com/paulpaulych/crypto/internal/core/rand"
 	"log"
 	. "math/big"
 	"reflect"

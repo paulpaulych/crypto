@@ -1,9 +1,9 @@
 package send
 
 import (
+	cli2 "github.com/paulpaulych/crypto/cmd/cli"
 	"github.com/paulpaulych/crypto/internal/app/messaging/msg-core"
 	"github.com/paulpaulych/crypto/internal/app/messaging/protocols"
-	"github.com/paulpaulych/crypto/internal/infra/cli"
 	"io"
 	"math/big"
 )
@@ -14,8 +14,8 @@ func (conf *Conf) CmdName() string {
 	return "send"
 }
 
-func (conf *Conf) NewCmd(args []string) (cli.Cmd, cli.CmdConfError) {
-	flagsSpec := cli.NewFlagSpec(conf.CmdName(), map[string]string{
+func (conf *Conf) NewCmd(args []string) (cli2.Cmd, cli2.CmdConfError) {
+	flagsSpec := cli2.NewFlagSpec(conf.CmdName(), map[string]string{
 		"P": "large prime integer",
 		"i": "message input type: file or arg",
 	})
@@ -26,7 +26,7 @@ func (conf *Conf) NewCmd(args []string) (cli.Cmd, cli.CmdConfError) {
 	}
 
 	if len(flags.Args) < 2 {
-		return nil, cli.NewCmdConfError("args required: [host:port] [message]", nil)
+		return nil, cli2.NewCmdConfError("args required: [host:port] [message]", nil)
 	}
 
 	addr := flags.Args[0]
@@ -34,17 +34,17 @@ func (conf *Conf) NewCmd(args []string) (cli.Cmd, cli.CmdConfError) {
 	primeStr := flags.Flags["P"].Get()
 	input := flags.Flags["i"].GetOr("console")
 
-	msgReader, e := cli.NewInputReader(input, flags.Args[1:])
+	msgReader, e := cli2.NewInputReader(input, flags.Args[1:])
 	if e != nil {
-		return nil, cli.NewCmdConfError(e.Error(), nil)
+		return nil, cli2.NewCmdConfError(e.Error(), nil)
 	}
 
 	if primeStr == nil || len(*primeStr) == 0 {
-		return nil, cli.NewCmdConfError("shamir protocol requires -prime flag", nil)
+		return nil, cli2.NewCmdConfError("shamir protocol requires -prime flag", nil)
 	}
 	prime, success := new(big.Int).SetString(*primeStr, 10)
 	if !success {
-		return nil, cli.NewCmdConfError("cannot parse P", nil)
+		return nil, cli2.NewCmdConfError("cannot parse P", nil)
 	}
 	if err != nil {
 		return nil, err

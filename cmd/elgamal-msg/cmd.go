@@ -1,9 +1,9 @@
 package elgamal_msg
 
 import (
+	"github.com/paulpaulych/crypto/cmd/cli"
 	"github.com/paulpaulych/crypto/cmd/elgamal-msg/recv"
 	"github.com/paulpaulych/crypto/cmd/elgamal-msg/send"
-	"github.com/paulpaulych/crypto/internal/infra/cli"
 )
 
 type Conf struct{}

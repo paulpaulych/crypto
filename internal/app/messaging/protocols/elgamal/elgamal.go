@@ -3,10 +3,10 @@ package elgamal
 import (
 	"errors"
 	"fmt"
-	dh "github.com/paulpaulych/crypto/internal/app/algorithms/diffie-hellman"
-	"github.com/paulpaulych/crypto/internal/app/algorithms/elgamal-cipher"
-	"github.com/paulpaulych/crypto/internal/app/algorithms/rand"
 	"github.com/paulpaulych/crypto/internal/app/nio"
+	dh "github.com/paulpaulych/crypto/internal/core/diffie-hellman"
+	"github.com/paulpaulych/crypto/internal/core/elgamal-cipher"
+	"github.com/paulpaulych/crypto/internal/core/rand"
 	"io"
 	"io/ioutil"
 	"log"

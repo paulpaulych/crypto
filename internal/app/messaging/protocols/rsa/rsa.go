@@ -2,9 +2,9 @@ package rsa
 
 import (
 	"fmt"
-	"github.com/paulpaulych/crypto/internal/app/algorithms/rand"
-	"github.com/paulpaulych/crypto/internal/app/algorithms/rsa-cipher"
 	"github.com/paulpaulych/crypto/internal/app/nio"
+	"github.com/paulpaulych/crypto/internal/core/rand"
+	"github.com/paulpaulych/crypto/internal/core/rsa-cipher"
 	"io"
 	"log"
 	. "math/big"

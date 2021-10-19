@@ -1,8 +1,8 @@
 package shamir_cipher
 
 import (
-	"github.com/paulpaulych/crypto/internal/app/algorithms/arythmetics"
-	"github.com/paulpaulych/crypto/internal/app/algorithms/rand"
+	"github.com/paulpaulych/crypto/internal/core/arythmetics"
+	"github.com/paulpaulych/crypto/internal/core/rand"
 	"log"
 	. "math/big"
 )

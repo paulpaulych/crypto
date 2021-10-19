@@ -1,12 +1,12 @@
 package protocols
 
 import (
-	dh "github.com/paulpaulych/crypto/internal/app/algorithms/diffie-hellman"
 	"github.com/paulpaulych/crypto/internal/app/messaging/msg-core"
 	"github.com/paulpaulych/crypto/internal/app/messaging/protocols/elgamal"
 	"github.com/paulpaulych/crypto/internal/app/messaging/protocols/rsa"
 	"github.com/paulpaulych/crypto/internal/app/messaging/protocols/shamir"
 	"github.com/paulpaulych/crypto/internal/app/nio"
+	dh "github.com/paulpaulych/crypto/internal/core/diffie-hellman"
 	"io/ioutil"
 	"math/big"
 	. "net"

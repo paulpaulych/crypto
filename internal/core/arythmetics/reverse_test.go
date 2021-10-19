@@ -2,7 +2,7 @@ package arythmetics
 
 import (
 	"errors"
-	"github.com/paulpaulych/crypto/internal/app/algorithms/rand"
+	"github.com/paulpaulych/crypto/internal/core/rand"
 	. "math/big"
 	"reflect"
 	"testing"

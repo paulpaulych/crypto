@@ -1,9 +1,9 @@
 package shamir_msg
 
 import (
+	"github.com/paulpaulych/crypto/cmd/cli"
 	"github.com/paulpaulych/crypto/cmd/shamir-msg/recv"
 	"github.com/paulpaulych/crypto/cmd/shamir-msg/send"
-	"github.com/paulpaulych/crypto/internal/infra/cli"
 )
 
 type Conf struct{}

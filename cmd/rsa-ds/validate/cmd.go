@@ -1,4 +1,4 @@
-package send
+package validate
 
 import (
 	cli2 "github.com/paulpaulych/crypto/cmd/cli"
@@ -10,7 +10,7 @@ import (
 type Conf struct{}
 
 func (conf *Conf) CmdName() string {
-	return "send"
+	return "validate"
 }
 
 func (conf *Conf) NewCmd(args []string) (cli2.Cmd, cli2.CmdConfError) {

@@ -18,6 +18,7 @@ func CryptoSafeRandom() Random {
 	}
 }
 
+// ConstRand is useful for tests
 func ConstRand(value *Int) Random {
 	return func() (*Int, error) {
 		return value, nil
@@ -56,6 +57,7 @@ func ConditionalRandom(predicate func(*Int) bool, rand Random) Random {
 	}
 }
 
+// CyclicRandom is useful for tests
 func CyclicRandom(values ...*Int) Random {
 	if values == nil || len(values) == 0 {
 		log.Panicf("CyclicRandom: values cannot be empty")

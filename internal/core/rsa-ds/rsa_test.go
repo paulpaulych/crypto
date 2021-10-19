@@ -15,7 +15,7 @@ var constHash = func(value *Int) HashFn {
 func TestSign(t *testing.T) {
 	tests := []struct {
 		name    string
-		key     *SecKey
+		key     *SecretKey
 		msg     *Int
 		hashFn  HashFn
 		want    *Signed
@@ -23,7 +23,7 @@ func TestSign(t *testing.T) {
 	}{
 		{
 			name:    "1",
-			key:     &SecKey{N: NewInt(11 * 29), Exp: NewInt(11)},
+			key:     &SecretKey{N: NewInt(11 * 29), Exp: NewInt(11)},
 			msg:     NewInt(4),
 			want:    &Signed{Msg: NewInt(4), Signature: NewInt(92)},
 			hashFn:  constHash(NewInt(4)),
