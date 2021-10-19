@@ -3,7 +3,6 @@ package rsa_cipher
 import (
 	. "github.com/paulpaulych/crypto/internal/app/algorithms/arythmetics"
 	. "github.com/paulpaulych/crypto/internal/app/algorithms/rand"
-	"log"
 	. "math/big"
 )
 
@@ -45,7 +44,7 @@ func NewBob(p *Int, q *Int, random Random) (*Bob, error) {
 		new(Int).Sub(p, NewInt(1)),
 		new(Int).Sub(q, NewInt(1)),
 	)
-	c, d, err := initNode(fi, random)
+	c, d, err := RandWithReverse(fi, random)
 	if err != nil {
 		return nil, err
 	}
@@ -58,23 +57,4 @@ func NewBob(p *Int, q *Int, random Random) (*Bob, error) {
 
 func (b Bob) Decode(encoded *Encoded) *Int {
 	return PowByMod(encoded.Value, b.BobSecret.c, b.BobPub.N)
-}
-
-// initNode for given fi returns c,D satisfying (c*D) (mod fi) = 1
-func initNode(fi *Int, rand Random) (c, d *Int, e error) {
-	fromToRandom := FromToRandom(NewInt(2), fi, rand)
-	for {
-		c, e := fromToRandom()
-		if e != nil {
-			return nil, nil, e
-		}
-		d, e = Reverse(c, fi)
-
-		if e != nil {
-			log.Printf("shamir-cipher node initialization failed: %s. Retrying...", e)
-			continue
-		}
-
-		return c, d, nil
-	}
 }

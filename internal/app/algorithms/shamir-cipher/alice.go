@@ -28,7 +28,7 @@ func (a *Alice) Step3(step2Out *Int) *Int {
 }
 
 func InitAlice(p *Int) (*Alice, error) {
-	c, d, err := initNode(p, rand.CryptoSafeRandom())
+	c, d, err := arythmetics.RandWithReverse(p, rand.CryptoSafeRandom())
 	if err != nil {
 		return nil, fmt.Errorf("writing step3out failed: %v", err)
 	}

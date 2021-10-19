@@ -3,6 +3,7 @@ package rand
 import (
 	"crypto/rand"
 	"fmt"
+	"log"
 	. "math/big"
 )
 
@@ -35,5 +36,36 @@ func FromToRandom(from *Int, to *Int, rand Random) Random {
 		diff := new(Int).Sub(to, from)
 		shift := new(Int).Mod(value, diff)
 		return new(Int).Add(shift, from), nil
+	}
+}
+
+// ConditionalRandom returns first random value that matches the predicate
+func ConditionalRandom(predicate func(*Int) bool, rand Random) Random {
+	return func() (*Int, error) {
+		for i := 0; ; i++ {
+			value, e := rand()
+			if e != nil {
+				return nil, e
+			}
+			if !predicate(value) {
+				log.Printf("ConditionalRandom: try %v failed. Retrying...", i)
+				continue
+			}
+			return value, nil
+		}
+	}
+}
+
+func CyclicRandom(values ...*Int) Random {
+	if values == nil || len(values) == 0 {
+		log.Panicf("CyclicRandom: values cannot be empty")
+	}
+
+	i := 0
+	size := len(values)
+	return func() (*Int, error) {
+		res := values[i]
+		i = (i + 1) % size
+		return res, nil
 	}
 }
