@@ -12,6 +12,8 @@ import (
 )
 
 const signedFileName = "signed"
+const secretFileName = "rsa.key"
+const publicFileName = "rsa_pub.key"
 
 func Sign(msgReader io.Reader, secretKeyFile string) error {
 	keyF, err := os.Open(secretKeyFile)
@@ -82,9 +84,6 @@ func Validate(signedFile string, pubKeyFile string) error {
 	fmt.Printf("Message: %v\n", string(signed.Msg.Bytes()))
 	return nil
 }
-
-const secretFileName = "rsa.key"
-const publicFileName = "rsa_pub.key"
 
 func GenerateKeys(p, q *Int) error {
 	pub, sec, err := rsa_ds.GenKeys(p, q, rand.CryptoSafeRandom())

@@ -59,10 +59,10 @@ func encoder(bobPub *rsa_cipher.BobPub, conn Conn) func([]byte) error {
 
 func ReadFn(
 	p *Int,
-	g *Int,
+	q *Int,
 	output func(Addr) nio.ClosableWriter,
 ) func(conn Conn) error {
-	bob, err := rsa_cipher.NewBob(p, g, rand.CryptoSafeRandom())
+	bob, err := rsa_cipher.NewBob(p, q, rand.CryptoSafeRandom())
 	if err != nil {
 		log.Fatalf("bob init failed: %v", err)
 	}

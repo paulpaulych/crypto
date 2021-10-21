@@ -8,39 +8,17 @@ import (
 	"net"
 )
 
-type Conf struct{}
-
-func (conf *Conf) CmdName() string {
-	return "recv"
-}
-func (conf *Conf) NewCmd(args []string) (cli.Cmd, cli.CmdConfError) {
-	var opts struct {
-		Host   string `short:"h" long:"host" description:"host to bind" default:"localhost"`
-		Port   string `short:"p" long:"port" description:"port to bind" default:"12345"`
-		Output string `short:"o" long:"output" choice:"file" choice:"console" description:"output type: console or file" default:"console"`
-	}
-
-	_, err := cli.ParseFlagsOfCmd(conf.CmdName(), &opts, args)
-	if err != nil {
-		return nil, err
-	}
-
-	output, e := cli.NewOutputFactory(opts.Output)
-	if e != nil {
-		return nil, cli.NewCmdConfErr(e, nil)
-	}
-
-	return &Cmd{
-		bindAddr: net.JoinHostPort(opts.Host, opts.Port),
-		output:   output,
-	}, nil
-}
-
 type Cmd struct {
-	bindAddr string
-	output   cli.OutputFactory
+	Host   string `short:"h" long:"host" description:"host to bind" default:"localhost"`
+	Port   string `short:"p" long:"port" description:"port to bind" default:"12345"`
+	Output string `short:"o" long:"output" choice:"file" choice:"console" description:"output type: console or file" default:"console"`
 }
 
-func (cmd *Cmd) Run() error {
-	return tcp.StartServer(cmd.bindAddr, msg_core.RecvMessage(protocols.ShamirReader(cmd.output)))
+func (c *Cmd) Execute(_ []string) error {
+	output, e := cli.NewOutputFactory(c.Output)
+	if e != nil {
+		return e
+	}
+	addr := net.JoinHostPort(c.Host, c.Port)
+	return tcp.StartServer(addr, msg_core.RecvMessage(protocols.ShamirReader(output)))
 }

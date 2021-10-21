@@ -57,7 +57,7 @@ func TestElgamal(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		testName := fmt.Sprintf("testCase for B={commonPubKey={P=%v,G=%v}, sec=%v, BobPub=%v}, msg=%v",
+		testName := fmt.Sprintf("testCase for B={commonPubKey={P=%v,Q=%v}, sec=%v, BobPub=%v}, msg=%v",
 			tt.bob.CommonPub.P(), tt.bob.CommonPub.G(), tt.bob.sec, tt.bob.Pub, tt.msg)
 
 		t.Run(testName, func(t *testing.T) {

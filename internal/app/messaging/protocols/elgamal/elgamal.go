@@ -114,7 +114,7 @@ func decoder(bob *elgamal_cipher.Bob, conn Conn) func(buf []byte) (int, error) {
 
 func fmtElgamalAlice(a *elgamal_cipher.Alice) string {
 	return fmt.Sprintln("Elgamal node(Alice) initialized.\n",
-		fmt.Sprintf("Common public key: P=%v, G=%v\n", a.CommonPub.P(), a.CommonPub.G()),
+		fmt.Sprintf("Common public key: P=%v, Q=%v\n", a.CommonPub.P(), a.CommonPub.G()),
 		fmt.Sprintf("Bob public key: '%v'", a.BobPub),
 	)
 }
@@ -125,7 +125,7 @@ func fmtElgamalBob(bob *elgamal_cipher.Bob) string {
 		return "error writing key"
 	}
 	return fmt.Sprintln("Elgamal node(Bob) initialized.\n",
-		fmt.Sprintf("Common public key: P=%v, G=%v\n", bob.CommonPub.P(), bob.CommonPub.G()),
+		fmt.Sprintf("Common public key: P=%v, Q=%v\n", bob.CommonPub.P(), bob.CommonPub.G()),
 		fmt.Sprintf("Node public key: '%v' (saved to %v)", bob.Pub, bobPubKeyFile),
 	)
 }

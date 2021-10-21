@@ -48,6 +48,6 @@ func RsaWriter(bobPubFileName string) msg_core.ConnWriter {
 	return msg_core.NewConnWriter(Rsa, rsa.WriteFn(bobPubFileName))
 }
 
-func RsaReader(p, g *big.Int, out func(addr Addr) nio.ClosableWriter) msg_core.ConnReader {
-	return msg_core.NewConnReader(Rsa, rsa.ReadFn(p, g, out))
+func RsaReader(p, q *big.Int, out func(addr Addr) nio.ClosableWriter) msg_core.ConnReader {
+	return msg_core.NewConnReader(Rsa, rsa.ReadFn(p, q, out))
 }

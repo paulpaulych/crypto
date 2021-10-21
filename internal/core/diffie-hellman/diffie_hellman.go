@@ -28,6 +28,6 @@ func NewCommonPublicKey(p, g *Int) (CommonPublicKey, error) {
 	if p.Cmp(NewInt(minP)) < 0 {
 		return nil, fmt.Errorf("p=%v cannot be less than %v", p, minP)
 	}
-	//	TODO: check that G is generator of multiplicative group modulo P if possible
+	//	TODO: check that Q is generator of multiplicative group modulo P if possible
 	return commonPublicKey{p: p, g: g}, nil
 }
