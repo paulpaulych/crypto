@@ -11,7 +11,7 @@ func Reverse(c, mod *Int) (*Int, error) {
 	gcdExOut := GcdEx(mod, c)
 
 	if gcdExOut.gcd.Cmp(NewInt(1)) != 0 {
-		return nil, fmt.Errorf("can't find reverse: %v and %v aren't mutually simple", c, mod)
+		return nil, fmt.Errorf("can't find reverse: %v and %v aren't coprime", c, mod)
 	}
 
 	reverse := gcdExOut.y

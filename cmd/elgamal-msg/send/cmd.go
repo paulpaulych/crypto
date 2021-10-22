@@ -10,7 +10,7 @@ import (
 
 type Cmd struct {
 	P          *cli.BigIntOpt `short:"P" description:"large prime number" required:"true"`
-	G          *cli.BigIntOpt `short:"Q" description:"generator of multiplicative group of integers modulo P" required:"true"`
+	G          *cli.BigIntOpt `short:"G" description:"generator of multiplicative group of integers modulo P" required:"true"`
 	BobPubFile string         `short:"b" long:"bob-pub" description:"path to file containing destination public key" required:"true"`
 	Input      string         `short:"i" long:"input" choice:"file" choice:"console" description:"input type: console or file" default:"console"`
 	Args       struct {
