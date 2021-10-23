@@ -71,7 +71,7 @@ func TestCyclicRandom(t *testing.T) {
 	for i, tt := range tests {
 		t.Run(fmt.Sprintf("case %v", i), func(t *testing.T) {
 			rand := CyclicRandom(tt.values...)
-			for i, v := range append(tt.values) {
+			for i, v := range tt.values {
 				if got, _ := rand(); !reflect.DeepEqual(got, v) {
 					t.Errorf("rand() = %v, want %v on position %v", got, v, i)
 				}
