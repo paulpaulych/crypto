@@ -21,7 +21,7 @@ func (b *Bob) Decode(step3Out *Int) *Int {
 }
 
 func InitBob(p *Int) (*Bob, error) {
-	c, d, err := arythmetics.RandWithReverse(p, rand.CryptoSafeRandom())
+	c, d, err := arythmetics.RandWithReverse(new(Int).Sub(p, NewInt(1)), rand.CryptoSafeRandom())
 	if err != nil {
 		return nil, err
 	}

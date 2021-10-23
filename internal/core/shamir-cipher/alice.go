@@ -18,7 +18,7 @@ func (a *Alice) Step1(msg *Int) (*Int, error) {
 		return nil, fmt.Errorf("shamir-cipher FATAL: msg=%v cannot be greater than P=%v", msg, a.P)
 	}
 	if msg.Cmp(NewInt(1)) != 1 {
-		return nil, fmt.Errorf("Shamir FATAL: msg=%v cannot be less than 2", msg)
+		return nil, fmt.Errorf("shamir FATAL: msg=%v cannot be less than 2", msg)
 	}
 	return arythmetics.PowByMod(msg, a.C, a.P), nil
 }
@@ -28,7 +28,7 @@ func (a *Alice) Step3(step2Out *Int) *Int {
 }
 
 func InitAlice(p *Int) (*Alice, error) {
-	c, d, err := arythmetics.RandWithReverse(p, rand.CryptoSafeRandom())
+	c, d, err := arythmetics.RandWithReverse(new(Int).Sub(p, NewInt(1)), rand.CryptoSafeRandom())
 	if err != nil {
 		return nil, fmt.Errorf("writing step3out failed: %v", err)
 	}

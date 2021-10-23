@@ -15,7 +15,7 @@ type Cmd struct {
 	} `positional-args:"true" required:"true"`
 }
 
-func (c *Cmd) NewCmd(_ []string) error {
+func (c *Cmd) Execute(_ []string) error {
 	msgReader, e := cli.NewInputReader(c.Input, c.Args.Msg)
 	if e != nil {
 		return e
