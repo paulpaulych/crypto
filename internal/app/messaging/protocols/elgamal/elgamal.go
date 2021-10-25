@@ -3,15 +3,17 @@ package elgamal
 import (
 	"errors"
 	"fmt"
-	"github.com/paulpaulych/crypto/internal/app/nio"
-	dh "github.com/paulpaulych/crypto/internal/core/diffie-hellman"
-	"github.com/paulpaulych/crypto/internal/core/elgamal-cipher"
-	"github.com/paulpaulych/crypto/internal/core/rand"
 	"io"
 	"io/ioutil"
 	"log"
 	. "math/big"
 	. "net"
+
+	msg_core "github.com/paulpaulych/crypto/internal/app/messaging/msg-core"
+	"github.com/paulpaulych/crypto/internal/app/nio"
+	dh "github.com/paulpaulych/crypto/internal/core/diffie-hellman"
+	"github.com/paulpaulych/crypto/internal/core/elgamal-cipher"
+	"github.com/paulpaulych/crypto/internal/core/rand"
 )
 
 const bobPubKeyFile = "bob_elgamal.key"
@@ -19,10 +21,10 @@ const bobPubKeyFile = "bob_elgamal.key"
 // TODO increase block size
 const blockSize = 1
 
-func WriteFn(
+func NewConnWriteFn(
 	commonPub dh.CommonPublicKey,
 	bobPub *Int,
-) func(msg io.Reader, conn Conn) error {
+) msg_core.ConnWriteFn  {
 	return func(msg io.Reader, conn Conn) error {
 		err := nio.NewBlockTransfer(blockSize).WriteBlocks(nio.WriteProps{
 			From:       msg,

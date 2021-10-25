@@ -25,9 +25,11 @@ type ConnWriter interface {
 	Write(msg io.Reader, conn Conn) error
 }
 
+type ConnWriteFn = func(msg io.Reader, conn Conn) error
+
 func NewConnWriter(
 	protocol ProtocolCode,
-	msgWriter func(msg io.Reader, conn Conn) error,
+	msgWriter ConnWriteFn,
 ) ConnWriter {
 	return &writer{protocol: protocol, msgWriter: msgWriter}
 }

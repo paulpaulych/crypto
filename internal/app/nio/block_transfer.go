@@ -15,13 +15,14 @@ const maxBlockSize = 255
 // which means number of first corresponding block bytes that should be read (contain original data).
 // So blockSize now cannot be greater than 255
 type BlockTransfer struct {
-	blockSize int
+	blockSize uint
 }
 
-func NewBlockTransfer(blockSize int) *BlockTransfer {
+func NewBlockTransfer(blockSize uint) *BlockTransfer {
 	if blockSize > maxBlockSize {
-		panic(fmt.Sprintln("BlockTransfer: blockSize cannot be grater than", maxBlockSize))
+		log.Panicln("BlockTransfer: blockSize cannot be grater than", maxBlockSize)
 	}
+	log.Printf("BLOCK: Initialized. Block size = %v", blockSize)
 	return &BlockTransfer{blockSize: blockSize}
 }
 

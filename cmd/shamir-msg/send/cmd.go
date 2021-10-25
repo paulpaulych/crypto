@@ -20,5 +20,9 @@ func (c *Cmd) Execute(_ []string) error {
 	if e != nil {
 		return e
 	}
-	return msg_core.SendMsg(c.Args.Addr, msgReader, protocols.ShamirWriter(c.P.Value))
+	writer, e := protocols.ShamirWriter(c.P.Value)
+	if e != nil {
+		return e
+	}
+	return msg_core.SendMsg(c.Args.Addr, msgReader, writer)
 }

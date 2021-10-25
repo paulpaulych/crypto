@@ -2,26 +2,31 @@ package shamir
 
 import (
 	"fmt"
-	"github.com/paulpaulych/crypto/internal/app/nio"
-	"github.com/paulpaulych/crypto/internal/core/shamir-cipher"
 	"io"
 	"log"
-	"math"
 	. "math/big"
 	. "net"
+	"github.com/paulpaulych/crypto/internal/app/messaging/msg-core"
+	"github.com/paulpaulych/crypto/internal/app/nio"
+	"github.com/paulpaulych/crypto/internal/core/shamir-cipher"
 )
 
-const blockSize = 4
+func calcBlockSize(p *Int) uint {
+	return uint(len(p.Bytes()) - 1)
+}
 
-func WriteFn(p *Int) func(msg io.Reader, conn Conn) error {
-	if p.Cmp(NewInt(math.MaxUint32)) <= 0 {
-		log.Fatalf("P cannot be less than %v", math.MaxUint32)
+const minP = 256
+
+func NewConnWriteFn(p *Int) (msg_core.ConnWriteFn, error) {
+	if p.Cmp(NewInt(minP)) <= 0 {
+		return nil, fmt.Errorf("p must be greater than %v", minP)
 	}
 	return func(msg io.Reader, conn Conn) error {
 		err := nio.WriteBigIntWithLen(conn, p)
 		if err != nil {
 			return fmt.Errorf("writing P failed: %v", err)
 		}
+		blockSize := calcBlockSize(p)
 
 		err = nio.NewBlockTransfer(blockSize).WriteBlocks(nio.WriteProps{
 			From:       msg,
@@ -32,7 +37,7 @@ func WriteFn(p *Int) func(msg io.Reader, conn Conn) error {
 			return fmt.Errorf("error sending block: %v", err)
 		}
 		return nil
-	}
+	}, nil
 }
 
 func encoder(p *Int, conn Conn) func([]byte) error {
@@ -86,6 +91,7 @@ func ReadFn(
 			return fmt.Errorf("can't read p: %s", err)
 		}
 
+		blockSize := calcBlockSize(p)
 		err = nio.NewBlockTransfer(blockSize).
 			ReadBlocks(nio.ReadProps{
 				MetaReader: conn,
@@ -124,9 +130,8 @@ func decoder(p *Int, conn Conn) func(buf []byte) (int, error) {
 		if err != nil {
 			return 0, fmt.Errorf("can't write step2out: %v", err)
 		}
-		//TODO: стреляет - исправить
 		bob.Decode(step3out).FillBytes(buf)
 
-		return blockSize, nil
+		return len(buf), nil
 	}
 }

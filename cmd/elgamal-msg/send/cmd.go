@@ -29,5 +29,9 @@ func (c *Cmd) Execute(_ []string) error {
 	if e != nil {
 		return fmt.Errorf("Diffie-Hellman public key error: %v", e)
 	}
-	return msg_core.SendMsg(c.Args.Addr, msgReader, protocols.ElgamalWriter(commonPub, c.BobPubFile))
+	writer, e := protocols.ElgamalWriter(commonPub, c.BobPubFile)
+	if e != nil {
+		return e
+	}
+	return msg_core.SendMsg(c.Args.Addr, msgReader, writer)
 }
