@@ -5,8 +5,9 @@ import (
 	"encoding/binary"
 	"fmt"
 	"io"
+	"io/ioutil"
+	"os"
 	"strings"
-
 )
 
 const nameBufLen = 4
@@ -34,8 +35,6 @@ func WriteNamedStream(name string, content io.Reader, w io.Writer) error {
 
 	return nil
 }
-
-
 
 type NamedStream struct {
 	name string
@@ -70,4 +69,23 @@ func ReadNamedStream(r io.Reader) (*NamedStream, error) {
 		name: string(nameBuf),
 		content: pr,
 	}, nil
+}
+
+func NewNamedStream(f *os.File) *NamedStream {
+	return &NamedStream{
+		name: f.Name(),
+		content: f,
+	}
+} 
+
+func (s *NamedStream) WriteToFile() error {
+	f, e := os.Create(s.name)
+	if e != nil {
+		return e
+	}
+	_, e = io.Copy(f, s.content)
+	if e != nil {
+		return e
+	}
+	return nil
 }
