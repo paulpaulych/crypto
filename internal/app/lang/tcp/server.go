@@ -6,7 +6,11 @@ import (
 	"net"
 )
 
-func StartServer(bindAddr string, handler func(net.Conn)) error {
+func StartServer(
+	bindAddr string,
+	errs chan<- error,
+	handler func(net.Conn) error,
+) error {
 	listener, err := net.Listen("tcp", bindAddr)
 	if err != nil {
 		return fmt.Errorf("can't bind to %s: %v", bindAddr, err)
@@ -19,6 +23,11 @@ func StartServer(bindAddr string, handler func(net.Conn)) error {
 		if err != nil {
 			log.Printf("TCP_SERVER: can't accept connection: %v", err)
 		}
-		go handler(conn)
+		go func() {
+			err := handler(conn)
+			if err != nil {
+				errs <- err
+			}
+		}()
 	}
 }

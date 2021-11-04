@@ -1,8 +1,6 @@
 package validate
 
-import (
-	"github.com/paulpaulych/crypto/internal/app/digital-sign"
-)
+import "github.com/paulpaulych/crypto/internal/app"
 
 type Cmd struct {
 	PubKeyFile string `short:"p" long:"pub-key-file" description:"path to file containing public key" default:"rsa_pub.key"`
@@ -12,5 +10,5 @@ type Cmd struct {
 }
 
 func (c *Cmd) Execute(_ []string) error {
-	return digital_sign.Validate(c.Args.SignedFile, c.PubKeyFile)
+	return app.RsaValidate(c.Args.SignedFile, c.PubKeyFile)
 }

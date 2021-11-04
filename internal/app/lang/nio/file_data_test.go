@@ -8,49 +8,45 @@ import (
 	"testing"
 )
 
-func TestWriteNamedStream(t *testing.T) {
-	type args struct {
-		name string
-		content    io.Reader
-	}
+func TestWriteFileData(t *testing.T) {
 	tests := []struct {
 		name    string
-		args    args
+		given FileData    
 		wantContent   []byte
 		wantErr bool
 	}{
 		{
 			name: "not empty name and not empty content ",
-			args: args {
-				name: "a.txt",
-				content: bytes.NewReader([]byte {1, 2, 3, 4, 5}), 
+			given: FileData{
+				Name: "a.txt",
+				Content: bytes.NewReader([]byte {1, 2, 3, 4, 5}), 
 			},
-			wantContent: []byte {0, 0, 0, 5, 97, 46, 116, 120, 116, 1, 2, 3, 4, 5},
+			wantContent: []byte {5, 97, 46, 116, 120, 116, 1, 2, 3, 4, 5},
 			wantErr: false,
 		},
 		{
 			name: "empty content",
-			args: args{
-				name: "a.txt",
-				content: bytes.NewReader([]byte {}), 
+			given: FileData{
+				Name: "a.txt",
+				Content: bytes.NewReader([]byte {}), 
 			},
-			wantContent: []byte {0, 0, 0, 5, 97, 46, 116, 120, 116},
+			wantContent: []byte {5, 97, 46, 116, 120, 116},
 			wantErr: false,
 		},
 		{
 			name: "empty name",
-			args: args{
-				name: "",
-				content: bytes.NewReader([]byte {1, 2, 3, 4}), 
+			given: FileData{
+				Name: "",
+				Content: bytes.NewReader([]byte {1, 2, 3, 4}), 
 			},
-			wantContent: []byte {0, 0, 0, 0, 1, 2, 3,},
+			wantContent: []byte {0, 1, 2, 3, 4},
 			wantErr: false,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			w := &bytes.Buffer{}
-			if err := WriteNamedStream(tt.args.name, tt.args.content, w); (err != nil) != tt.wantErr {
+			if _, err := tt.given.WriteTo(w); (err != nil) != tt.wantErr {
 				t.Errorf("WriteNamedStream() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
@@ -61,7 +57,7 @@ func TestWriteNamedStream(t *testing.T) {
 	}
 }
 
-func TestReadNamedStream(t *testing.T) {
+func TestReadFileData(t *testing.T) {
 	type res struct {
 		name string
 		content []byte
@@ -78,7 +74,7 @@ func TestReadNamedStream(t *testing.T) {
 		{
 			name: "not empty name and not empty content ",
 			args: args {
-				r: bytes.NewReader([]byte {0, 0, 0, 5, 97, 46, 116, 120, 116, 1, 2, 3, 4, 5}),
+				r: bytes.NewReader([]byte { 5, 97, 46, 116, 120, 116, 1, 2, 3, 4, 5}),
 			},
 			want: res {
 				name: "a.txt",
@@ -89,7 +85,7 @@ func TestReadNamedStream(t *testing.T) {
 		{
 			name: "empty name ",
 			args: args {
-				r: bytes.NewReader([]byte {0, 0, 0, 0, 1, 2, 3, 4, 5}),
+				r: bytes.NewReader([]byte { 0, 1, 2, 3, 4, 5}),
 			},
 			want: res {
 				name: "",
@@ -100,7 +96,7 @@ func TestReadNamedStream(t *testing.T) {
 		{
 			name: "empty content",
 			args: args {
-				r: bytes.NewReader([]byte {0, 0, 0, 5, 97, 46, 116, 120, 116}),
+				r: bytes.NewReader([]byte { 5, 97, 46, 116, 120, 116}),
 			},
 			want: res {
 				name: "a.txt",
@@ -111,13 +107,13 @@ func TestReadNamedStream(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := ReadNamedStream(tt.args.r)
+			got, err := ReadFileData(tt.args.r)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("ReadNamedStream() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			gotContent, _ := ioutil.ReadAll(got.content)
-			gotRes := res { name: got.name, content: gotContent }
+			gotContent, _ := ioutil.ReadAll(got.Content)
+			gotRes := res { name: got.Name, content: gotContent }
 			if !reflect.DeepEqual(gotRes, tt.want) {
 				t.Errorf("ReadNamedStream() = {name=%v,content=%v}, want {name=%v,content=%v}",
 					gotRes.name, gotRes.content, tt.want.name, tt.want.content)

@@ -3,17 +3,15 @@ package elgamal
 import (
 	"errors"
 	"fmt"
-	"io"
-	"io/ioutil"
-	"log"
-	. "math/big"
-	. "net"
-
-	msg_core "github.com/paulpaulych/crypto/internal/app/messaging/msg-core"
-	"github.com/paulpaulych/crypto/internal/app/nio"
+	"github.com/paulpaulych/crypto/internal/app/lang/nio"
+	"github.com/paulpaulych/crypto/internal/app/messaging/msg-core"
 	dh "github.com/paulpaulych/crypto/internal/core/diffie-hellman"
 	"github.com/paulpaulych/crypto/internal/core/elgamal-cipher"
 	"github.com/paulpaulych/crypto/internal/core/rand"
+	"io"
+	"io/ioutil"
+	"log"
+	"math/big"
 )
 
 const bobPubKeyFile = "bob_elgamal.key"
@@ -21,85 +19,73 @@ const bobPubKeyFile = "bob_elgamal.key"
 // TODO increase block size
 const blockSize = 1
 
-func NewConnWriteFn(
-	commonPub dh.CommonPublicKey,
-	bobPub *Int,
-) msg_core.ConnWriteFn  {
-	return func(msg io.Reader, conn Conn) error {
-		err := nio.NewBlockTransfer(blockSize).WriteBlocks(nio.WriteProps{
-			From:       msg,
-			MetaWriter: conn,
-			DataWriter: nio.NewFnWriter(encoder(commonPub, bobPub, conn)),
-		})
-		if err != nil {
-			return fmt.Errorf("error sending block: %v", err)
+func SendFunc(
+	cp dh.CommonPublicKey,
+	bobPub *big.Int,
+) msg_core.SendFunc {
+	return func(rw io.ReadWriter) (io.Writer, error) {
+		target := &nio.BlockTarget{
+			MetaWriter: rw,
+			DataWriter: nio.WriterFunc(encode(cp, bobPub, rw)),
 		}
-		return nil
+		writer, err := nio.NewBlockTransfer(blockSize).Writer(target)
+		if err != nil {
+			return nil, fmt.Errorf("error sending block: %v", err)
+		}
+		return writer, nil
 	}
 }
 
-func encoder(
-	commonPub dh.CommonPublicKey,
-	bobPub *Int,
-	conn Conn,
-) func([]byte) error {
-	return func(block []byte) error {
-		alice := elgamal_cipher.NewAlice(commonPub, bobPub)
+func encode(
+	cp dh.CommonPublicKey,
+	bobPub *big.Int,
+	rw io.ReadWriter,
+) nio.WriterFunc {
+	return func(p []byte) (int, error) {
+		alice := elgamal_cipher.NewAlice(cp, bobPub)
 		fmt.Print(fmtElgamalAlice(alice))
 
-		msgInt := new(Int).SetBytes(block)
+		msgInt := new(big.Int).SetBytes(p)
 		log.Printf("ELGAMAL: data int: %v", msgInt)
 		encoded := alice.Encode(msgInt, rand.CryptoSafeRandom())
 		log.Printf("ELGAMAL: R=%v, E=%v", encoded.R, encoded.E)
-		err := nio.WriteBigIntWithLen(conn, encoded.R)
+		err := nio.WriteBigIntWithLen(rw, encoded.R)
 		if err != nil {
-			return fmt.Errorf("writing R failed: %v", err)
+			return 0, fmt.Errorf("writing R failed: %v", err)
 		}
-		err = nio.WriteBigIntWithLen(conn, encoded.E)
+		err = nio.WriteBigIntWithLen(rw, encoded.E)
 		if err != nil {
-			return fmt.Errorf("writing E failed: %v", err)
+			return 0, fmt.Errorf("writing E failed: %v", err)
 		}
 
-		return nil
+		return len(p), nil
 	}
 }
 
-func ReadFn(
-	cPub dh.CommonPublicKey,
-	output func(Addr) nio.ClosableWriter,
-) func(conn Conn) error {
-	bob := elgamal_cipher.NewBob(cPub)
+// TODO: last byte is ignored
+func ReceiveFunc(cp dh.CommonPublicKey) msg_core.ReceiveFunc {
+	bob := elgamal_cipher.NewBob(cp)
 	fmt.Print(fmtElgamalBob(bob))
-
-	return func(conn Conn) error {
-		out := output(conn.RemoteAddr())
-		defer func() {
-			err := out.Close()
-			if err != nil {
-				log.Printf("failed to close writer: %s", err)
-			}
-		}()
-
-		err := nio.NewBlockTransfer(blockSize).ReadBlocks(nio.ReadProps{
-			MetaReader: conn,
-			DataReader: nio.NewFnReader(decoder(bob, conn)),
-			To:         out,
-		})
-		if err != nil {
-			return fmt.Errorf("can't transfer: %v", err)
+	return func(rw io.ReadWriter) (io.Reader, error) {
+		src := &nio.BlockSrc{
+			MetaReader: rw,
+			DataReader: nio.ReaderFunc(decrypt(bob, rw)),
 		}
-		return nil
+		return nio.NewBlockTransfer(blockSize).Reader(src), nil
 	}
 }
 
-func decoder(bob *elgamal_cipher.Bob, conn Conn) func(buf []byte) (int, error) {
+func decrypt(
+	bob *elgamal_cipher.Bob,
+	rw io.ReadWriter,
+) nio.ReaderFunc {
 	return func(buf []byte) (int, error) {
-		R, err := nio.ReadBigIntWithLen(conn)
+		R, err := nio.ReadBigIntWithLen(rw)
 		if err != nil {
 			return 0, fmt.Errorf("can't read R: %v", err)
 		}
 
-		E, err := nio.ReadBigIntWithLen(conn)
+		E, err := nio.ReadBigIntWithLen(rw)
 		if err != nil {
 			return 0, fmt.Errorf("can't read E: %v", err)
 		}

@@ -1,149 +1,129 @@
 package rsa
 
 import (
+	"bytes"
 	"fmt"
-	"github.com/paulpaulych/crypto/internal/app/nio"
-	"github.com/paulpaulych/crypto/internal/core/rand"
-	"github.com/paulpaulych/crypto/internal/core/rsa-cipher"
 	"io"
+	"math/big"
 	"log"
-	. "math/big"
-	. "net"
-	"os"
+	"github.com/paulpaulych/crypto/internal/app/lang/nio"
+	"github.com/paulpaulych/crypto/internal/app/messaging/msg-core"
+	"github.com/paulpaulych/crypto/internal/core/rand"
+	rsa "github.com/paulpaulych/crypto/internal/core/rsa-cipher"
 )
-
-const bobKeyFileName = "bob_rsa.key"
 
 // TODO: increase block size
 const blockSize = 1
 
-func WriteFn(bobPubFileName string) func(msg io.Reader, conn Conn) error {
-	return func(msg io.Reader, conn Conn) error {
-		file, err := os.Open(bobPubFileName)
-		if err != nil {
-			return err
-		}
-		bobPub, err := readBobKey(file)
-		if err != nil {
-			return err
-		}
-
-		err = nio.NewBlockTransfer(blockSize).WriteBlocks(nio.WriteProps{
-			From:       msg,
-			MetaWriter: conn,
-			DataWriter: nio.NewFnWriter(encoder(bobPub, conn)),
-		})
-		if err != nil {
-			return fmt.Errorf("error sending block: %v", err)
-		}
-		return nil
+func SendFunc(bobPub []byte) (msg_core.SendFunc, error) {
+	bp, err := readBobKey(bobPub)
+	if err != nil {
+		return nil, fmt.Errorf("can'r read bob public key: %v", err)
 	}
+	sendFunc := func(rw io.ReadWriter) (io.Writer, error) {
+		target := &nio.BlockTarget {
+			MetaWriter: rw,
+			DataWriter: nio.WriterFunc(encrypt(bp, rw)),
+		}
+		writer, err := nio.NewBlockTransfer(blockSize).Writer(target)
+		if err != nil {
+			return nil, fmt.Errorf("error sending block: %v", err)
+		}
+		return writer, nil
+	}
+
+	return sendFunc, nil 
 }
 
-func encoder(bobPub *rsa_cipher.BobPub, conn Conn) func([]byte) error {
-	return func(block []byte) error {
-		alice := rsa_cipher.NewAlice(bobPub)
+func ReceiveFunc(p, q *big.Int, onBobKey func([]byte) error) (msg_core.ReceiveFunc, error) {
+	bob, err := rsa.NewBob(p, q, rand.CryptoSafeRandom())
+	if err != nil {
+		return nil, fmt.Errorf("bob init failed: %v", err)
+	}
+	bobPubBytes, err := writeBobKey(bob.BobPub)
+	if err != nil {
+		return nil, err
+	}
+	err = onBobKey(bobPubBytes)
+	if err != nil {
+		return nil, err
+	}
+	receiveFunc := func(rw io.ReadWriter) (io.Reader, error) {
+		src := &nio.BlockSrc{
+			MetaReader: rw,
+			DataReader: nio.ReaderFunc(decrypt(bob, rw)),
+		}
+		blocks := nio.NewBlockTransfer(blockSize)
+		return blocks.Reader(src), nil
+	}
+	return receiveFunc, nil
+}
+
+func encrypt(bp *rsa.BobPub, rw io.ReadWriter) nio.WriterFunc {
+	max := bp.MaxValueCanBeEcnrypted()
+	return func(p []byte) (int, error) {
+		alice := rsa.NewAlice(bp)
 		log.Println(fmtAlice(alice))
 
-		msgInt := new(Int).SetBytes(block)
-		encoded := alice.Encode(msgInt)
-
-		err := nio.WriteBigIntWithLen(conn, encoded.Value)
-		if err != nil {
-			return fmt.Errorf("writing encoded msg failed: %v", err)
+		given := new(big.Int).SetBytes(p)
+		if given.Cmp(max) > 0 {
+			return 0, fmt.Errorf("RSA: can't encrypt value %v beacause it's greater than %v", given, max)
+		}
+		encoded := alice.Encode(given)
+		e := nio.WriteBigIntWithLen(rw, encoded.Value)
+		if e != nil {
+			return 0, fmt.Errorf("writing encoded msg failed: %v", e)
 		}
 
-		return nil
+		return len(p), nil
 	}
 }
 
-func ReadFn(
-	p *Int,
-	q *Int,
-	output func(Addr) nio.ClosableWriter,
-) func(conn Conn) error {
-	bob, err := rsa_cipher.NewBob(p, q, rand.CryptoSafeRandom())
-	if err != nil {
-		log.Fatalf("bob init failed: %v", err)
-	}
-	fmt.Println(fmtBob(bob))
-	return func(conn Conn) error {
-		out := output(conn.RemoteAddr())
-		defer func() {
-			err := out.Close()
-			if err != nil {
-				log.Printf("failed to close writer: %s", err)
-			}
-		}()
-
-		err := nio.NewBlockTransfer(blockSize).
-			ReadBlocks(nio.ReadProps{
-				MetaReader: conn,
-				DataReader: nio.NewFnReader(decoder(bob, conn)),
-				To:         out,
-			})
-		if err != nil {
-			return fmt.Errorf("can't transfer: %s", err)
-		}
-		return nil
-	}
-}
-
-func decoder(bob *rsa_cipher.Bob, conn Conn) func(buf []byte) (int, error) {
-	return func(buf []byte) (int, error) {
-		encodedValue, err := nio.ReadBigIntWithLen(conn)
+func decrypt(b *rsa.Bob, rw io.ReadWriter) nio.ReaderFunc {
+	return func(p []byte) (int, error) {
+		encodedValue, err := nio.ReadBigIntWithLen(rw)
 		if err == io.EOF {
 			return 0, io.EOF
 		}
 		if err != nil {
 			return 0, fmt.Errorf("can't read encoded: %v", err)
 		}
-		encoded := &rsa_cipher.Encoded{Value: encodedValue}
-		bob.Decode(encoded).FillBytes(buf)
-		return blockSize, nil
+		encoded := &rsa.Encoded{Value: encodedValue}
+		b.Decode(encoded).FillBytes(p)
+		return len(p), nil
 	}
 }
 
-func fmtAlice(a *rsa_cipher.Alice) string {
+func fmtAlice(a *rsa.Alice) string {
 	return fmt.Sprintln("Shamir node(Alice) initialized.\n",
 		fmt.Sprintf("Bob public key: N=%v,d=%v", a.BobPub.N, a.BobPub.D),
 	)
 }
 
-func fmtBob(bob *rsa_cipher.Bob) string {
-	file := nio.NewFileWriter(bobKeyFileName, func() {
-		fmt.Println("PUBLIC KEY SAVED TO", bobKeyFileName)
-	})
-	defer func() { _ = file.Close() }()
-	err := writeBobKey(bob.BobPub, file)
-	if err != nil {
-		log.Fatalf("failed to save key to file: %v", err)
-	}
-	return fmt.Sprintln("Shamir node(Bob) initialized.\n",
-		fmt.Sprintf("Public key: N=%v, d=%v\n", bob.BobPub.N, bob.BobPub.D),
-	)
-}
-
-func writeBobKey(key *rsa_cipher.BobPub, writer io.Writer) error {
-	err := nio.WriteBigIntWithLen(writer, key.N)
-	if err != nil {
-		return err
-	}
-	err = nio.WriteBigIntWithLen(writer, key.D)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func readBobKey(reader io.Reader) (*rsa_cipher.BobPub, error) {
-	N, err := nio.ReadBigIntWithLen(reader)
+func writeBobKey(key *rsa.BobPub) ([]byte, error) {
+	buf := &bytes.Buffer{}
+	err := nio.WriteBigIntWithLen(buf, key.N)
 	if err != nil {
 		return nil, err
 	}
-	D, err := nio.ReadBigIntWithLen(reader)
+	err = nio.WriteBigIntWithLen(buf, key.D)
 	if err != nil {
 		return nil, err
 	}
-	return &rsa_cipher.BobPub{D: D, N: N}, nil
+	bytes := buf.Bytes()
+	return bytes, nil
+}
+
+func readBobKey(b []byte) (*rsa.BobPub, error) {
+	log.Println("rsa bob key bytes: ", b)
+	buf := bytes.NewBuffer(b)
+	N, err := nio.ReadBigIntWithLen(buf)
+	if err != nil {
+		return nil, err
+	}
+	D, err := nio.ReadBigIntWithLen(buf)
+	if err != nil {
+		return nil, err
+	}
+	return &rsa.BobPub{D: D, N: N}, nil
 }

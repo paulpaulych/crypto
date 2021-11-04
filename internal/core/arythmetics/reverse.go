@@ -25,14 +25,14 @@ func Reverse(c, mod *Int) (*Int, error) {
 // RandWithReverse for given 'P' returns rand,d satisfying
 //  1. 1 < rand < P
 //  2. rand*d = 1 (mod P)
-func RandWithReverse(P *Int, random rand.Random) (c, r *Int, e error) {
+func RandWithReverse(P *Int, random rand.Random) (r, d *Int, e error) {
 	var reverse *Int
 	predicate := func(c *Int) bool {
-		r, e = Reverse(c, P)
+		d, e = Reverse(c, P)
 		if e != nil {
 			return false
 		} else {
-			reverse = r
+			reverse = d
 			return true
 		}
 	}

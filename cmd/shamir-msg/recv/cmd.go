@@ -1,24 +1,16 @@
 package recv
 
 import (
-	"github.com/paulpaulych/crypto/cmd/cli"
-	"github.com/paulpaulych/crypto/internal/app/messaging/msg-core"
-	"github.com/paulpaulych/crypto/internal/app/messaging/protocols"
-	"github.com/paulpaulych/crypto/internal/app/tcp"
 	"net"
+	"github.com/paulpaulych/crypto/internal/app"
 )
 
 type Cmd struct {
 	Host   string `short:"h" long:"host" description:"host to bind" default:"localhost"`
 	Port   string `short:"p" long:"port" description:"port to bind" default:"12345"`
-	Output string `short:"o" long:"output" choice:"file" choice:"console" description:"output type: console or file" default:"console"`
 }
 
 func (c *Cmd) Execute(_ []string) error {
-	output, e := cli.NewOutputFactory(c.Output)
-	if e != nil {
-		return e
-	}
 	addr := net.JoinHostPort(c.Host, c.Port)
-	return tcp.StartServer(addr, msg_core.RecvMessage(protocols.ShamirReader(output)))
+	return app.ShamirRecv(addr)	
 }

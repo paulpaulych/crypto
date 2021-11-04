@@ -13,7 +13,7 @@ func main() {
 		RsaMsg     *rsa_msg.Cmd     `command:"rsa-msg" description:"allows messaging encrypted by RSA algorithm"`
 		ElgamalMsg *elgamal_msg.Cmd `command:"elgamal-msg" description:"allows messaging encrypted by Elgamal algorithm"`
 		ShamirMsg  *shamir_msg.Cmd  `command:"shamir-msg" description:"allows messaging encrypted by Shamir algorithm"`
-		RsaDs      *rsa_ds.Cmd      `command:"rsa-ds" description:"for work with RSA based digital signature"`
+		RsaDs      *rsa_ds.Cmd      `command:"rsa-ds" description:"utilities for RSA based digital signature"`
 	}
 	parser := flags.NewParser(&rootCmd, flags.Default)
 	_, err := parser.Parse()

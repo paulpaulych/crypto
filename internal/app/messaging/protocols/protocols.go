@@ -2,15 +2,14 @@ package protocols
 
 import (
 	"fmt"
+	"io/ioutil"
+	"math/big"
+
 	"github.com/paulpaulych/crypto/internal/app/messaging/msg-core"
 	"github.com/paulpaulych/crypto/internal/app/messaging/protocols/elgamal"
 	"github.com/paulpaulych/crypto/internal/app/messaging/protocols/rsa"
 	"github.com/paulpaulych/crypto/internal/app/messaging/protocols/shamir"
-	"github.com/paulpaulych/crypto/internal/app/nio"
 	dh "github.com/paulpaulych/crypto/internal/core/diffie-hellman"
-	"io/ioutil"
-	"math/big"
-	. "net"
 )
 
 const (
@@ -19,40 +18,62 @@ const (
 	Rsa
 )
 
-func ShamirWriter(p *big.Int) (msg_core.ConnWriter, error) {
-	write, err := shamir.NewConnWriteFn(p)
+func ShamirReceiver() msg_core.Receiver {
+	return msg_core.NewReceiver(Shamir, shamir.ReceiveFunc)
+}
+
+func ShamirSender(p *big.Int) (msg_core.Sender, error) {
+	write, err := shamir.SendFunc(p)
 	if err != nil {
 		return nil, err
 	}
-	return msg_core.NewConnWriter(Shamir, write), nil
+	return msg_core.NewSender(Shamir, write), nil
 }
 
-func ShamirReader(out func(addr Addr) nio.ClosableWriter) msg_core.ConnReader {
-	return msg_core.NewConnReader(Shamir, shamir.ReadFn(out))
+func RsaSender(bobPub []byte) (msg_core.Sender, error) {
+	fn, err := rsa.SendFunc(bobPub)
+	if err != nil {
+		return nil, err
+	}
+	return msg_core.NewSender(Rsa, fn), nil
 }
 
-func ElgamalWriter(cPub dh.CommonPublicKey, bobPubFileName string) (msg_core.ConnWriter, error) {
+func RsaReceiver(p, q *big.Int) (msg_core.Receiver, error) {
+	receiveFunc, err := rsa.ReceiveFunc(p, q, saveRsaBobPubKeyToFile)
+	if err != nil {
+		return nil, err
+	}
+	return msg_core.NewReceiver(Rsa, receiveFunc), nil
+}
+
+func ElgamalSender(p, g *big.Int, bobPubFileName string) (msg_core.Sender, error) {
+	commonPub, e := dh.NewCommonPublicKey(p, g)
+	if e != nil {
+		return nil, fmt.Errorf("Diffie-Hellman public key error: %v", e)
+	}
 	bytes, err := ioutil.ReadFile(bobPubFileName)
 	if err != nil {
 		return nil, err
 	}
 	bobPub := new(big.Int).SetBytes(bytes)
-	writeFn := elgamal.NewConnWriteFn(cPub, bobPub)
-	return msg_core.NewConnWriter(Elgamal, writeFn), nil
+	writeFn := elgamal.SendFunc(commonPub, bobPub)
+	return msg_core.NewSender(Elgamal, writeFn), nil
 }
 
-func ElgamalReader(p, g *big.Int, out func(addr Addr) nio.ClosableWriter) (msg_core.ConnReader, error) {
+func ElgamalReceiver(p, g *big.Int) (msg_core.Receiver, error) {
 	commonPub, e := dh.NewCommonPublicKey(p, g)
 	if e != nil {
 		return nil, fmt.Errorf("Diffie-Hellman public key error: %v", e)
 	}
-	return msg_core.NewConnReader(Elgamal, elgamal.ReadFn(commonPub, out)), nil
+	return msg_core.NewReceiver(Elgamal, elgamal.ReceiveFunc(commonPub)), nil
 }
 
-func RsaWriter(bobPubFileName string) msg_core.ConnWriter {
-	return msg_core.NewConnWriter(Rsa, rsa.WriteFn(bobPubFileName))
-}
-
-func RsaReader(p, q *big.Int, out func(addr Addr) nio.ClosableWriter) msg_core.ConnReader {
-	return msg_core.NewConnReader(Rsa, rsa.ReadFn(p, q, out))
+const rsaBobKeyFileName = "bob_rsa.key"
+func saveRsaBobPubKeyToFile(bobPub []byte) error {
+	err := ioutil.WriteFile(rsaBobKeyFileName, bobPub, 0777)
+	if err != nil {
+		return err
+	}
+	fmt.Println("PUBLIC KEY SAVED TO", rsaBobKeyFileName)
+	return nil
 }

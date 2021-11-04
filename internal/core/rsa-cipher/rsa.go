@@ -14,6 +14,9 @@ type BobPub struct {
 	N *Int
 	D *Int
 }
+func (bp *BobPub) MaxValueCanBeEcnrypted() *Int {
+	return new(Int).Sub(bp.N, NewInt(1))
+}
 
 type Bob struct {
 	*BobSecret
