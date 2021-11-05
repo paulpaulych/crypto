@@ -68,11 +68,11 @@ crypto rsa-msg send -bob-pub bob_rsa.key -i file localhost:12346 some-file.txt
 # generate public and secret keys. P and Q are large prime numbers
 crypto rsa-ds key-gen -P 30803 -Q 1297 
 
-# sign file with private key
-crypto rsa-ds sign -secret rsa.key some-file.txt
+# cerate signature file for given message file
+crypto rsa-ds sign -s rsa.key some-file.txt
 
-# validate signed file with public key
-crypto rsa-ds validate -pub rsa_pub.key signed.txt
+# validate signature for file with public key
+crypto rsa-ds validate -p rsa_pub.key -s siignature-file some-file.txt
 ```
 
 ## Implementation
