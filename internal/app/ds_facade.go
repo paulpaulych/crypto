@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	signatureFileName = "signature"
+	signatureFileExt = ".sign"
 	secretFileName = "rsa.key"
  	publicFileName = "rsa_pub.key"
 
@@ -52,12 +52,14 @@ func RsaSign(msgFile string, secretKeyFile string) error {
 	if e != nil {
 		return fmt.Errorf("signature error: %v", e)
 	}
-	log.Println("SIGNATURE SAVED TO", signatureFileName)
 
-	e = ioutil.WriteFile(signatureFileName, sign, keyFilePerm)
+	signFName := msgFile + signatureFileExt
+	e = ioutil.WriteFile(signFName, sign, keyFilePerm)
 	if e != nil {
 		return fmt.Errorf("can't write public file: %v", e)
 	}
+	log.Println("SIGNATURE SAVED TO", signFName)
+
 	return nil
 }
 
