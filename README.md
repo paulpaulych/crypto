@@ -14,7 +14,7 @@
 
 ## Summary
 
-    Educational project. CLI utilities implemented with basic cryptography algorithms
+    This educational project provides command line utilities implemented with basic cryptography algorithms
 
 ## Run from sources
 
