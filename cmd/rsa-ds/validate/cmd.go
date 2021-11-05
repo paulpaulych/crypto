@@ -3,12 +3,13 @@ package validate
 import "github.com/paulpaulych/crypto/internal/app"
 
 type Cmd struct {
-	PubKeyFile string `short:"p" long:"pub-key-file" description:"path to file containing public key" default:"rsa_pub.key"`
+	PubKeyFile string `short:"p" long:"pub-key-file" description:"path to file containing public key" required:"true"`
+	SignatureFile string `short:"s" long:"signature-file" description:"path to file containing signature" required:"true"`
 	Args       struct {
-		SignedFile string `positional-arg-name:"signed-file" description:"path to file containing signed message"`
+		MsgFile string `positional-arg-name:"msg-file" description:"path to file containing original message"`
 	} `positional-args:"true" required:"true"`
 }
 
 func (c *Cmd) Execute(_ []string) error {
-	return app.RsaValidate(c.Args.SignedFile, c.PubKeyFile)
+	return app.RsaValidate(c.Args.MsgFile, c.SignatureFile, c.PubKeyFile)
 }

@@ -3,6 +3,7 @@ package app
 import (
 	"fmt"
 	"io/ioutil"
+	"log"
 	"math/big"
 	"os"
 
@@ -10,7 +11,7 @@ import (
 )
 
 const (
-	signedFileName = "signed"
+	signatureFileName = "signature"
 	secretFileName = "rsa.key"
  	publicFileName = "rsa_pub.key"
 
@@ -26,10 +27,12 @@ func RsaKeyGen(p, q *big.Int) error {
 	if e != nil {
 		return fmt.Errorf("can't write secret file: %v", e)
 	}
+	log.Println("SECRET KEY SAVED TO", secretFileName)
 	e = ioutil.WriteFile(publicFileName, keys.Public, keyFilePerm)
 	if e != nil {
 		return fmt.Errorf("can't write public file: %v", e)
 	}
+	log.Println("PUBLIC KEY SAVED TO", publicFileName)
 	return nil
 }
 
@@ -41,24 +44,29 @@ func RsaSign(msgFile string, secretKeyFile string) error {
 
 	msg, e := os.Open(msgFile)
 	if e != nil {
-		return nil
+		return fmt.Errorf("can't open msg file: %v", e)
 	}
 	defer msg.Close()
 
-	signed, e := digital_sign.Sign(msg, sec)
+	sign, e := digital_sign.Sign(msg, sec)
 	if e != nil {
 		return fmt.Errorf("signature error: %v", e)
 	}
+	log.Println("SIGNATURE SAVED TO", signatureFileName)
 
-	e = ioutil.WriteFile(signedFileName, signed, keyFilePerm)
+	e = ioutil.WriteFile(signatureFileName, sign, keyFilePerm)
 	if e != nil {
 		return fmt.Errorf("can't write public file: %v", e)
 	}
 	return nil
 }
 
-func RsaValidate(signedFile string, pubFName string) error {
-	signed, e := ioutil.ReadFile(signedFile)
+func RsaValidate(msgFile string, signFile string, pubFName string) error {
+	msg, e := ioutil.ReadFile(msgFile)
+	if e != nil {
+		return fmt.Errorf("can't open msg file: %v", e)
+	}
+	signature, e := ioutil.ReadFile(signFile)
 	if e != nil {
 		return fmt.Errorf("can't read signed file: %v", e)
 	}
@@ -67,5 +75,5 @@ func RsaValidate(signedFile string, pubFName string) error {
 		return fmt.Errorf("can't read public key: %v", e)
 	}
 
-	return digital_sign.Validate(signed, pub)	
+	return digital_sign.Validate(msg, signature, pub)	
 }

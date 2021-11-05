@@ -17,9 +17,12 @@ type SecretKey struct {
 	Exp *Int
 }
 
-type Signed struct {
-	Msg       *Int
-	Signature *Int
+type Signature struct {
+	Value *Int
+}
+
+type Msg struct {
+	Value *Int
 }
 
 func GenKeys(p, q *Int, random rand.Random) (*PubKey, *SecretKey, error) {
@@ -36,24 +39,22 @@ func GenKeys(p, q *Int, random rand.Random) (*PubKey, *SecretKey, error) {
 	return &PubKey{N: N, Exp: d}, &SecretKey{Exp: c, N: N}, nil
 }
 
-func Sign(key *SecretKey, msg *Int, hashFn HashFn) (*Signed, error) {
-	hash, err := hashFn(msg)
+func Sign(key *SecretKey, msg *Msg, hashFn HashFn) (*Signature, error) {
+	hash, err := hashFn(msg.Value)
 	if err != nil {
 		return nil, fmt.Errorf("can't stupidHash: %v", err)
 	}
-	signature := arythmetics.PowByMod(hash, key.Exp, key.N)
-	return &Signed{
-		Msg:       msg,
-		Signature: signature,
+	return &Signature{
+		Value: arythmetics.PowByMod(hash, key.Exp, key.N),
 	}, err
 }
 
-func IsSignatureValid(key *PubKey, signed *Signed, hashFn HashFn) (bool, error) {
-	expectedHash, err := hashFn(signed.Msg)
+func IsSignatureValid(key *PubKey, msg *Msg, sign *Signature, hashFn HashFn) (bool, error) {
+	expectedHash, err := hashFn(msg.Value)
 	if err != nil {
 		return false, fmt.Errorf("can't stupidHash: %v", err)
 	}
-	hash := arythmetics.PowByMod(signed.Signature, key.Exp, key.N)
+	hash := arythmetics.PowByMod(sign.Value, key.Exp, key.N)
 	if expectedHash.Cmp(hash) != 0 {
 		return false, nil
 	}

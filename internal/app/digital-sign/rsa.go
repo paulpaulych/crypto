@@ -10,8 +10,10 @@ import (
 
 	"github.com/paulpaulych/crypto/internal/app/lang/nio"
 	"github.com/paulpaulych/crypto/internal/core/rand"
-	rsa_ds "github.com/paulpaulych/crypto/internal/core/rsa-ds"
+	"github.com/paulpaulych/crypto/internal/core/rsa-ds"
 )
+
+// TODO: add format for saved files, checksums maybe
 
 func Sign(msgReader io.Reader, secretKeyBytes []byte) ([]byte, error) {
 	key, err := readSecret(secretKeyBytes)
@@ -24,12 +26,16 @@ func Sign(msgReader io.Reader, secretKeyBytes []byte) ([]byte, error) {
 		return nil, err
 	}
 
-	signed, err := rsa_ds.Sign(key, new(big.Int).SetBytes(msg), simpleHash)
+	signed, err := rsa_ds.Sign(
+		key,
+		&rsa_ds.Msg{Value: new(big.Int).SetBytes(msg)},
+		simpleHash,
+	)
 	if err != nil {
 		return nil, fmt.Errorf("signature error: %v", err)
 	}
 
-	signedBytes, err := writeSigned(signed)
+	signedBytes, err := writeSignature(signed)
 	if err != nil {
 		return nil, err
 	}
@@ -37,18 +43,28 @@ func Sign(msgReader io.Reader, secretKeyBytes []byte) ([]byte, error) {
 	return signedBytes, nil
 }
 
-func Validate(signedReader []byte, pubKeyBytes []byte) error {
+func Validate(
+	msgBytes []byte,
+	signBytes []byte,
+	pubKeyBytes []byte,
+) error {
 	pubKey, err := readPublic(pubKeyBytes)
 	if err != nil {
 		return fmt.Errorf("error reading public key from file: %v", err)
 	}
+	msg:= new(big.Int).SetBytes(msgBytes)
 
-	signed, err := readSigned(signedReader)
+	signed, err := readSignature(signBytes)
 	if err != nil {
 		return fmt.Errorf("error reading signed key from file: %v", err)
 	}
 
-	valid, err := rsa_ds.IsSignatureValid(pubKey, signed, simpleHash)
+	valid, err := rsa_ds.IsSignatureValid(
+		pubKey,
+		&rsa_ds.Msg{Value: msg},
+		signed,
+		simpleHash,
+	)
 	if err != nil {
 		return fmt.Errorf("error validation signature: %v", err)
 	}
@@ -57,7 +73,6 @@ func Validate(signedReader []byte, pubKeyBytes []byte) error {
 	} else {
 		fmt.Println("SIGNATURE IS VALID")
 	}
-	fmt.Printf("Message: %v\n", string(signed.Msg.Bytes()))
 	return nil
 }
 
@@ -142,26 +157,19 @@ func simpleHash(orig *big.Int) (*big.Int, error) {
 	return new(big.Int).SetBytes(orig.Bytes()[:1]), nil
 }
 
-func readSigned(from []byte) (*rsa_ds.Signed, error) {
+func readSignature(from []byte) (*rsa_ds.Signature, error) {
 	buf := bytes.NewBuffer(from)
-	msg, err := nio.ReadBigIntWithLen(buf)
-	if err != nil {
-		return nil, err
-	}
+
 	signature, err := nio.ReadBigIntWithLen(buf)
 	if err != nil {
 		return nil, err
 	}
-	return &rsa_ds.Signed{Msg: msg, Signature: signature}, nil
+	return &rsa_ds.Signature{Value: signature}, nil
 }
 
-func writeSigned(signed *rsa_ds.Signed) ([]byte, error) {
+func writeSignature(sign *rsa_ds.Signature) ([]byte, error) {
 	buf := &bytes.Buffer{}
-	err := nio.WriteBigIntWithLen(buf, signed.Msg)
-	if err != nil {
-		return nil, err
-	}
-	err = nio.WriteBigIntWithLen(buf, signed.Signature)
+	err := nio.WriteBigIntWithLen(buf, sign.Value)
 	if err != nil {
 		return nil, err
 	}

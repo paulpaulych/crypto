@@ -16,16 +16,16 @@ func TestSign(t *testing.T) {
 	tests := []struct {
 		name    string
 		key     *SecretKey
-		msg     *Int
+		msg     *Msg
 		hashFn  HashFn
-		want    *Signed
+		want    *Signature
 		wantErr bool
 	}{
 		{
 			name:    "1",
 			key:     &SecretKey{N: NewInt(11 * 29), Exp: NewInt(11)},
-			msg:     NewInt(4),
-			want:    &Signed{Msg: NewInt(4), Signature: NewInt(92)},
+			msg:     &Msg{NewInt(4)},
+			want:    &Signature{NewInt(92)},
 			hashFn:  constHash(NewInt(4)),
 			wantErr: false,
 		},
@@ -48,7 +48,8 @@ func TestIsSignatureValid(t *testing.T) {
 	tests := []struct {
 		name    string
 		key     *PubKey
-		signed  *Signed
+		msg     *Msg
+		sign    *Signature
 		hashFn  HashFn
 		want    bool
 		wantErr bool
@@ -56,7 +57,8 @@ func TestIsSignatureValid(t *testing.T) {
 		{
 			name:    "1",
 			key:     &PubKey{N: NewInt(11 * 29), Exp: NewInt(51)},
-			signed:  &Signed{Msg: NewInt(4), Signature: NewInt(92)},
+			msg:     &Msg{NewInt(4)},
+			sign:    &Signature{NewInt(92)},
 			hashFn:  constHash(NewInt(4)),
 			want:    true,
 			wantErr: false,
@@ -64,7 +66,8 @@ func TestIsSignatureValid(t *testing.T) {
 		{
 			name:    "2",
 			key:     &PubKey{N: NewInt(11 * 29), Exp: NewInt(51)},
-			signed:  &Signed{Msg: NewInt(4), Signature: NewInt(97)},
+			msg:     &Msg{NewInt(4)},
+			sign:    &Signature{NewInt(97)},
 			hashFn:  constHash(NewInt(4)),
 			want:    false,
 			wantErr: false,
@@ -72,7 +75,7 @@ func TestIsSignatureValid(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := IsSignatureValid(tt.key, tt.signed, tt.hashFn)
+			got, err := IsSignatureValid(tt.key, tt.msg, tt.sign, tt.hashFn)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("IsSignatureValid() error = %v, wantErr %v", err, tt.wantErr)
 				return
