@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"log"
 	"math/big"
+	"strings"
 )
 
-// TODO: increase max value?
-var max, _ = new(big.Int).SetString("11111111111111111111111111111111111", 10)
+var max, _ = new(big.Int).SetString(strings.Repeat("9", 100), 10)
 
 type Random = func() (*big.Int, error)
 
@@ -41,19 +41,19 @@ func FromToRandom(from *big.Int, to *big.Int, rand Random) Random {
 }
 
 // ConditionalRandom returns first random value that matches the predicate
-func ConditionalRandom(predicate func(*big.Int) bool, rand Random) Random {
+func ConditionalRandom(maxTry int, predicate func(*big.Int) bool, rand Random) Random {
 	return func() (*big.Int, error) {
-		for i := 0; ; i++ {
+		for i := 0; i < maxTry; i++ {
 			value, e := rand()
 			if e != nil {
 				return nil, e
 			}
 			if !predicate(value) {
-				log.Printf("ConditionalRandom: try %v failed. Retrying...", i)
 				continue
 			}
 			return value, nil
 		}
+		return nil, fmt.Errorf("conditional random: max try count(%v) exceeded", maxTry)
 	}
 }
 
