@@ -11,7 +11,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     env: 
-      GIT_HEAD_REF: ${{ github.gead_ref }}
+      EXECUTABLE_SUFF: ${{ github.gead_ref }}
 
     steps:
     - uses: actions/checkout@v2
@@ -32,7 +32,7 @@ jobs:
       run: |
         mkdir -p build/linux && \
         go build -v -o build/linux ./... && \
-        mv ./build/linux/cmd ./build/linux/crypto-$GIT_HEAD_REF-linux.bin/
+        mv ./build/linux/cmd ./build/linux/crypto-${{ env.EXECUTABLE_SUFF }}-linux.bin
 
     - name: Build for Windows
       env:
@@ -41,7 +41,7 @@ jobs:
       run: |
         mkdir -p build/windows && \
         go build -v -o build/windows ./... && \
-        mv ./build/windows/cmd.exe ./build/windows/crypto-$GIT_HEAD_REF-windows.exe/
+        mv ./build/windows/cmd.exe ./build/windows/crypto-${{ env.EXECUTABLE_SUFF }}-windows.exe
         
     - name: Upload artifacts artifacts
       uses: actions/upload-artifact@v2
