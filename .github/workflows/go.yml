@@ -26,7 +26,7 @@ jobs:
         GOOS: linux
         GOARCH: amd64 
       run: |
-        mkdir -p build/linux \
+        mkdir -p build/linux && \
         go build -v -o build/linux ./...
 
     - name: Build for Windows
@@ -34,7 +34,7 @@ jobs:
         GOOS: windows
         GOARCH: amd64 
       run: |
-        mkdir -p build/windows \
+        mkdir -p build/windows && \
         go build -v -o build/windows ./...
         
     - name: Upload artifacts artifacts
