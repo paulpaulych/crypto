@@ -10,6 +10,9 @@ jobs:
 
   build:
     runs-on: ubuntu-latest
+    env: 
+      GIT_HEAD_REF: ${{ github.gead_ref }}
+
     steps:
     - uses: actions/checkout@v2
 
@@ -24,25 +27,26 @@ jobs:
     - name: Build for Linux
       env:
         GOOS: linux
-        GOARCH: amd64 
+        GOARCH: amd64
+         
       run: |
         mkdir -p build/linux && \
-        go build -v -o build/linux ./...
+        go build -v -o build/linux ./... && \
+        mv ./build/linux/cmd ./build/linux/crypto-$GIT_HEAD_REF-linux.bin/
 
     - name: Build for Windows
       env:
         GOOS: windows
-        GOARCH: amd64 
+        GOARCH: amd64
       run: |
         mkdir -p build/windows && \
-        go build -v -o build/windows ./...
+        go build -v -o build/windows ./... && \
+        mv ./build/windows/cmd.exe ./build/windows/crypto-$GIT_HEAD_REF-windows.exe/
         
     - name: Upload artifacts artifacts
       uses: actions/upload-artifact@v2
       with:
-        name: distrib
+        name: distrinb
         path: |
           build/linux
           build/linux
-
-      
