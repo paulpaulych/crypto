@@ -14,6 +14,7 @@ const maxBlockSize = 255
 // which means number of first corresponding block bytes that should be read (contain original data).
 // So blockSiBlockTransfer writes/reads additional(i.e. meta) information.
 // Current implementationze now cannot be greater than 255
+// TODO: last byte missed
 type BlockTransfer struct {
 	blockSize uint
 }

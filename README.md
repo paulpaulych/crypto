@@ -34,30 +34,30 @@ You can send files using several encryption algorithms
 
 ```shell
 # this starts receiver server and saves public key to file
-crypto elgamal-msg recv -P 30803 -G 2 -port 12346 -o file 
+crypto elgamal-msg recv -P 30803 -G 2 --port 12346 
 
 # this sends given file to server  
-crypto elgamal-msg send -bob-pub bob_elgamal.key -P 30803 -G 2 -i file localhost:12346 some-file.txt
+crypto elgamal-msg send --bob-pub bob_elgamal.key -P 30803 -G 2 localhost:12346 some-file.txt
 ```
 
 ### RSA cipher
 
 ```shell
 # this starts receiver server and saves public key to file
-crypto rsa-msg recv -P 30803 -Q 1297 -o file -port 12346
+crypto rsa-msg recv -P 30803 -Q 1297 --port 12346
 
 # this sends given file to server  
-crypto rsa-msg send -bob-pub bob_rsa.key -i file localhost:12346 some-file.txt
+crypto rsa-msg send --bob-pub bob_rsa.key localhost:12346 some-file.txt
 ```
 
 ### Shamir cipher
 
 ```shell
 # this starts receiver server
-crypto rsa-msg recv -P 30803 -Q 1297 -o file -port 12346
+crypto rsa-msg recv -P 30803 -Q 1297 --port 12346
 
 # this sends given file to server  
-crypto rsa-msg send -bob-pub bob_rsa.key -i file localhost:12346 some-file.txt
+crypto rsa-msg send --bob-pub bob_rsa.key localhost:12346 some-file.txt
 ```
 
 ## Digital signature
@@ -72,7 +72,7 @@ crypto rsa-ds key-gen -P 30803 -Q 1297
 crypto rsa-ds sign -s rsa.key some-file.txt
 
 # validate signature for file with public key
-crypto rsa-ds validate -p rsa_pub.key -s siignature-file some-file.txt
+crypto rsa-ds validate -p rsa_pub.key -s signature-file some-file.txt
 ```
 
 ## Implementation

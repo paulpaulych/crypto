@@ -37,6 +37,7 @@ func ElgamalRecv(bindAddr string, p, g *big.Int) error {
 	if e != nil {
 		return fmt.Errorf("protocol error: %v", e)
 	}
+	// TODO: log result
 	return tcp.StartServer(
 		bindAddr,
 		loggingErrorsChan(),
@@ -56,6 +57,7 @@ func ElgamalSend(
 	if e != nil {
 		return fmt.Errorf("protocol error: %v", e)
 	}
+	// TODO: log result 
 	return sendEncryptedFile(target, fname, protocol)
 }
 
