@@ -53,12 +53,15 @@ func RandWithReverse(P *big.Int, random rand.Random) (r, d *big.Int, e error) {
 	return value, reverse, nil
 }
 
+const MAX_TRY = 100
+
 func CoprimeToRand(a *big.Int, r rand.Random) rand.Random {
 	hasReverseElement := func(c *big.Int) bool {
 		_, e := Reverse(c, a)
 		return e != nil
 	}
 	return rand.ConditionalRandom(
+		MAX_TRY,
 		hasReverseElement,
 		rand.FromToRandom(big.NewInt(2), a, r),
 	)
